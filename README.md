@@ -1,6 +1,6 @@
 # Ice Cream Clouds
 ## In celebration of Earth Day, a modest proposal for solving global climate change
-Dateline the future...
+Dateline: the future...
 
 We only had one planet and things were getting worse.  It was time for drastic action. The scientists and engineers brainstormed. The first idea was to harness volcanoes to pump sulfur dioxide into the upper atmosphere, but no one wanted acid rain-- too sour.
 

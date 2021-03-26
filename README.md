@@ -6,7 +6,7 @@ We only had one planet and things were getting worse.  It was time for drastic a
 
 The next idea was one-way reflective clouds.  It could certainly work if the math was right. The only drawback was baseball sized hail that would bonk people on the head. What a headache! Everyone was downhearted, but then Professor van Stroopwafel thought of a way to make the hail softer, sweeter, and overall ice creamier.
 
-It worked! In year three, they even figured out how to add toppings.  Now every summer folks gather in parks and on lawns to catch ice cream from the ice cream clouds.  
+It worked! In year three, they even figured out how to add toppings.  Now every summer folks gather in parks and on lawns to catch ice cream from the skies.  
 
 *****
 Catch falling scoops of ice cream and toppings to complete each order.

@@ -4,6 +4,7 @@ __lua__
 
 left,right,up,down,fire1,fire2=0,1,2,3,4,5
 black,brown, gray, white,orange, yellow, blue, purple, pink,dark_brown,dark_green, red, dark_orange, green, dark_blue, dark_purple =0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+wrap,bounce,remove=0,1,2
 s=
 {
 	scoops=
@@ -47,12 +48,38 @@ function render(entities)
 		spr(entity.sprite.index,entity.x,entity.y,entity.sprite.width,entity.sprite.height,entity.mirror)
 	end
 end
-function move(entities)
-	for entity in all(entities) do
+
+function move(entities,options)
+	local i=1
+	while (i<=#entities) do
+		local entity=entities[i]
 		if frame%entity.dt == 0 then
 			entity.x+=entity.dx
 			entity.y+=entity.dy
+			if (options.mode==wrap)then
+				if (not (options.x ==  nil)) then
+					if (entity.x>options.x[2]) entity.x=options.x[1]
+					if (entity.x<options.x[1]) entity.x=options.x[2]
+				end
+			elseif (options.mode==bounce) then
+				if (entity.x>options.x[2]) then
+					entity.x=options.x[2]
+					entity.dx=-entity.dx
+					entity.mirror=not entity.mirror
+				elseif (entity.x<options.x[1]) then
+					entity.x=options.x[1]
+					entity.dx=-entity.dx
+					entity.mirror=not entity.mirror
+				end	
+				
+			elseif (options.mode==remove) then
+				if ((entity.x>options.x[2] and entity.dx>0)or (entity.x<options.x[1] and entity.dx < 0)) then
+					deli(entities,i)
+					i-=1
+				end	
+			end	
 		end	
+		i+=1
 	end
 end
 function nextframe()
@@ -64,7 +91,8 @@ function _init()
 	gamestate=1
 	level=1
 	frame=0
---[[	]]--
+	gravity=0.3
+    friction=0.75
 	e=
 	{
 		gray_cloudcover=
@@ -82,9 +110,8 @@ function _init()
 		},
 		gray_clouds=
 		{
-			{sprite=s.clouds[1],x=-10,y=44,dx=1,dt=2, dy=0,mirror=false}
+			{sprite=s.clouds[1],x=-10,y=44,dx=1,dt=2, dy=0,mirror=false},
 		},
-
 		bigcone={sprite=s.cones.big,x=41,y=63}
 	}
 	_draw=gs.draw[gamestate]
@@ -194,19 +221,9 @@ gs.draw={
 		for cloud in all(e.clouds) do
 			_spr(cloud)
 		end
-		_spr(e.cone)
-		
-
---		spr(s.cones.small.index,40,98,s.cones.small.width,s.cones.small.height)
+		render(e.player)
 		spr(s.scoops.vanilla.index,39,91,s.scoops.vanilla.width,s.scoops.vanilla.height,false)
 		spr(s.scoops.berry.index,60,40,s.scoops.berry.width,s.scoops.berry.height,true)
-		
-		--spr(186,20,80,2,2,true)
-		--spr(208,100,60,2,2,false)
-	
---		spr(112,79,90,2,2,true)
---	spr(176,80,84,2,2,false)
-		
 	end,
 	function () --big blue marble
 		
@@ -219,9 +236,8 @@ gs.draw={
 }
 gs.update=
 {
-	
-	function()
-		move(e.gray_clouds)
+	function()  -- title screen
+		move(e.gray_clouds,{mode=bounce, x={-50,135}})
 		if ((e.gray_clouds[1].x<-50 and e.gray_clouds[1].dx<0) or (e.gray_clouds[1].x>135 and e.gray_clouds[1].dx>0) ) then
 			e.gray_clouds[1].dx=-e.gray_clouds[1].dx
 			e.gray_clouds[1].mirror = not e.gray_clouds[1].mirror
@@ -229,17 +245,17 @@ gs.update=
 		if btnp()>0 then
 			_draw=gs.draw[2]
 			_update=gs.update[2]
-
+			
 		end	
 		nextframe()
 	end,
-	function()
+	function() -- newspaper page 1
 		if btnp()>0 then
 			_draw=gs.draw[3]
 			_update=gs.update[3]
 		end
 	end,
-	function()
+	function()  -- newspaper page 2
 		if btnp()>0 then
 			_draw=gs.draw[4]
 			_update=gs.update[4]
@@ -254,20 +270,44 @@ gs.update=
 					{sprite=rnd(s.clouds),x=112+rnd(10),y=rnd(10),mirror=rnd{true,false}}
 				},
 				scoops={},
-				cone={sprite=s.cones.small,x=60,y=96,dx=0},
+				player=
+				{
+					{sprite=s.cones.small,x=60,y=92,dx=0,dy=0,dt=1,maxdx=5,maxdy=0,acc=1}
+				},
 				clouds=
 				{
-					{sprite=rnd(s.clouds),x=rnd(128),y=rnd(10),mirror=rnd{true,false},dx=rnd(4)-2},
-					{sprite=rnd(s.clouds),x=rnd(128),y=rnd(10),mirror=rnd{true,false},dx=rnd(4)-2}
-				},
-				bigcone={sprite=s.cones.big,x=41,y=60}
-
+					{sprite=rnd(s.clouds),x=rnd(32)+32,y=flr(rnd(10))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}), dy=0,dt=4, maxdx=0, maxdy=0, acc=0},
+					{sprite=rnd(s.clouds),x=rnd(32)+32,y=flr(rnd(10))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
+				}
 			}
 		end
 	end,
-	function()
+	function() -- park
+		for p in all(e.player) do
+			if (btn(left)) p.dx-=p.acc 
+			if (btn(right)) p.dx+=p.acc 
+			p.dx*=friction
+			p.dx=mid(-p.maxdx,p.dx,p.maxdx)
+		end	
+		move(e.player,{mode=wrap,x={-12,128}})
+		move (e.clouds,{mode=remove,x={-50,128}})
+		
+		if (#e.clouds<2) then
+			local cloud={sprite=rnd(s.clouds),y=flr(rnd(10))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
+			if (cloud.dx<0) then
+				cloud.x = 128+flr(rnd(30))
+			else
+				cloud.x= -50-flr(rnd(30))
+			end	
+			add(e.clouds,cloud)
+		end
+
+		frame+=1
+	end,
+	function() -- conclusion
+	end,
+	function() -- epilogue
 	end
-	
 }
 __gfx__
 73337333333433330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000333113330000000000000000

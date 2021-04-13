@@ -11,4 +11,4 @@ It worked! In year three, they even figured out how to add toppings.  Now, every
 *****
 Catch ice cream and toppings to complete each order.
 *****
-Global climate change and rainbow sprinkles are real.  Sadly, ice cream clouds are not.  If you love this planet and the people on it, do what you can to save the Earth: drive less, eat less meat, switch to renewable energy sources, live in cities, and most importantly vote for leaders who take this issue seriously.
+Global climate change and rainbow sprinkles are real.  Sadly, ice cream clouds are not.  If you love this planet and the people on it, do what you can to save the Earth: drive less, eat less meat, switch to renewable energy sources, live in cities, and most importantly vote for leaders who take this issue seriously before it's game over.

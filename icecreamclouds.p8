@@ -7,20 +7,7 @@ black,brown, gray, white,orange, yellow, blue, purple, pink,dark_brown,dark_gree
 wrap,bounce,remove=0,1,2
 s=
 {
-	scoops=
-	{
-		vanilla={index=80, width=2, height=2},
-		berry={index=112, width=2, height=2},
-		choco={index=144, width=2, height=2},
-		mint={index=176, width=2, height=2},
-		orange={index=178, width=2, height=2},
-		ripple={index=208, width=2, height=2},
-	},
-	clouds=
-	{
-		{index=228, width=4, height=2},
-		{index=180, width=6, height=3}
-	},
+	
 	toppings=
 	{
 		cherry=
@@ -30,24 +17,39 @@ s=
 		sprinkles=
 		{{index=137, width=1, height=1},{index=153, width=1, height=1},{index=169, width=1, height=1}},
 	},
+	scoops=
+	{
+		vanilla={{index=80, width=2, height=2}},
+		berry={{index=112, width=2, height=2}},
+		choco={{index=144, width=2, height=2}},
+		mint={{index=176, width=2, height=2}},
+		orange={{index=178, width=2, height=2}},
+		ripple={{index=208, width=2, height=2}}
+	},
 	cones=
 	{
-		small={index=210, width=2, height=3},
-		big={index=90, width=6, height=7}
+		small={{index=210, width=2, height=3}},
+		big={{index=90, width=6, height=7}}
 	},
-	baseball={index=206, width=2, height=2},
-	professor={index=13, width=1, height=1},
-	umbrella={index=0, width=1, height=1},
-	volcano={index=1, width=1, height=1},
+	clouds=
+	{
+		{{index=228, width=4, height=2}},
+		{{index=180, width=6, height=3}}
+	},
+	
+	baseball={{index=56, width=1, height=1}},
+	professor={{index=13, width=1, height=1}},
+	umbrella={{index=0, width=1, height=1}},
+	volcano={{index=1, width=1, height=1}},
+	tinycloud={{index=55, width=1, height=1}}
 }
-function _spr(entity)
-	spr(entity.sprite.index,entity.x,entity.y,entity.sprite.width,entity.sprite.height,entity.mirror)
+
+function render(entity)
+	step=frame%#(entity.sprite)+1
+	sprite=entity.sprite[step]
+	spr(sprite.index,entity.x,entity.y,sprite.width,sprite.height,entity.mirror)
 end
-function render(entities)
-	for entity in all(entities) do
-		spr(entity.sprite.index,entity.x,entity.y,entity.sprite.width,entity.sprite.height,entity.mirror)
-	end
-end
+
 
 function move(entities,options)
 	local i=1
@@ -73,12 +75,16 @@ function move(entities,options)
 				end	
 				
 			elseif (options.mode==remove) then
-				if ((entity.x>options.x[2] and entity.dx>0)or (entity.x<options.x[1] and entity.dx < 0)) then
+				if ( entity.x>options.x[2] and entity.dx>0)or (entity.x<options.x[1] and entity.dx < 0) then
 					deli(entities,i)
-					i-=1
+					i-=1						
+				elseif (entity.y>options.y[2] and entity.dy>0)or (entity.y<options.y[1] and entity.dy < 0) then
+					deli(entities,i)
+					i-=1	
 				end	
-			end	
+			end
 		end	
+		
 		i+=1
 	end
 end
@@ -93,6 +99,15 @@ function _init()
 	frame=0
 	gravity=0.3
     friction=0.75
+	s.fixings=
+	{
+		{{index=80, width=2, height=2}},
+		{{index=112, width=2, height=2}},
+		{{index=144, width=2, height=2}},
+		{{index=176, width=2, height=2}},
+		{{index=178, width=2, height=2}},
+		{{index=208, width=2, height=2}},
+	}
 	e=
 	{
 		gray_cloudcover=
@@ -125,21 +140,21 @@ gs.draw={
 		cls(blue)
 		pal(white,gray)
 		pal(gray, purple)
-		render(e.gray_cloudcover)
-		render(e.gray_clouds)
+		foreach(e.gray_cloudcover,render)
+		foreach(e.gray_clouds,render)
 		pal(white,purple)
 		pal(gray,dark_puple)
-		render(e.purple_cloudcover)
+		foreach(e.purple_cloudcover,render)
 		pal(white,white)
 		pal(gray,gray)
-		render(e.white_cloudcover)
+		foreach(e.white_cloudcover,render)
 		color(white)
 		print("\^pice",53,10)
 		print("\^pcream",45,22)
 		print("\^pclouds",41,34)
 		print("\151 to play",44,48)
-		_spr(e.bigcone)
-		_spr({sprite=s.clouds[2],x=52,y=87})
+		render(e.bigcone)
+		render({sprite=s.clouds[2],x=52,y=87})
 	end,
 	function () -- newspaper page 1
 		cls(white)
@@ -161,22 +176,23 @@ gs.draw={
 		print(" the next idea was ultra ")
 		print(" reflective clouds spun from ")
 		print(" sugar and soy. it might work ")
-		print(" if the math was right. the ")
-		print(" only drawback was baseball ")
-		print(" sized hail bonking people ")
+		print(" if the math was right. the")
+		print(" only concern was hail as big")
+		print(" as baseballs bonking people")
 		print(" hard. what a headache! \151")
 		palt(black,false)
 		palt(white,true)
-		_spr({sprite=s.volcano,x=117,y=44})
-		_spr({sprite=s.umbrella,x=117,y=64})
-		_spr({sprite=s.baseball,x=112,y=99})
+		render({sprite=s.volcano,x=117,y=44})
+		render({sprite=s.umbrella,x=117,y=64})
+		render({sprite=s.tinycloud,x=117,y=82})
+		render({sprite=s.baseball,x=118,y=101})
 	end,
 	function () -- newspaper page 2
 		cls(white)
 		rectfill(0,86,128,128,blue)
 		color(black)
 		print("")
-		print(" everyone was downcast. then")
+		print(" everyone despaired, but then")
 		print(" professor von stroopwafel ")
 		print(" discovered a way to make the ")
 		print(" hail softer, sweeter, and ")
@@ -200,30 +216,29 @@ gs.draw={
 		
 		palt(black,true)
 		palt(white,true)
-		_spr({sprite=s.professor,x=116,y=10})
-		_spr({sprite=s.toppings.cherry[1],x=115,y=49})
-		_spr({sprite=s.scoops.berry,x=112,y=68})
+		render({sprite=s.professor,x=116,y=11})
+		render({sprite=s.toppings.cherry,x=115,y=49})
+		render({sprite=s.scoops.berry,x=112,y=68})
 		palt(white,false)
 
 	end,
-	function () --ice cream clouds
+	function () --park
 		
 		cls(blue)
 		rectfill(0,69,127,127,dark_green)
 		map(0,0)
+
 		pal(gray,dark_purple)
 		pal(white,purple)
-		for cloud in all(e.cloud_cover) do
-			_spr(cloud)
-		end
+		foreach(e.cloud_cover,render)
+
 		pal(white,white)
 		pal(gray,gray)
-		for cloud in all(e.clouds) do
-			_spr(cloud)
-		end
-		render(e.player)
-		spr(s.scoops.vanilla.index,39,91,s.scoops.vanilla.width,s.scoops.vanilla.height,false)
-		spr(s.scoops.berry.index,60,40,s.scoops.berry.width,s.scoops.berry.height,true)
+		foreach(e.player,render)
+		foreach(e.fixings,render)
+		foreach(e.clouds,render)
+		
+		
 	end,
 	function () --big blue marble
 		
@@ -269,7 +284,7 @@ gs.update=
 					{sprite=rnd(s.clouds),x=80+rnd(10),y=rnd(10),mirror=rnd{true,false}},
 					{sprite=rnd(s.clouds),x=112+rnd(10),y=rnd(10),mirror=rnd{true,false}}
 				},
-				scoops={},
+				fixings={},
 				player=
 				{
 					{sprite=s.cones.small,x=60,y=92,dx=0,dy=0,dt=1,maxdx=5,maxdy=0,acc=1}
@@ -280,9 +295,11 @@ gs.update=
 					{sprite=rnd(s.clouds),x=rnd(32)+32,y=flr(rnd(10))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
 				}
 			}
+			
 		end
 	end,
 	function() -- park
+		local cloud,fixing
 		for p in all(e.player) do
 			if (btn(left)) p.dx-=p.acc 
 			if (btn(right)) p.dx+=p.acc 
@@ -290,10 +307,9 @@ gs.update=
 			p.dx=mid(-p.maxdx,p.dx,p.maxdx)
 		end	
 		move(e.player,{mode=wrap,x={-12,128}})
-		move (e.clouds,{mode=remove,x={-50,128}})
-		
-		if (#e.clouds<2) then
-			local cloud={sprite=rnd(s.clouds),y=flr(rnd(10))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
+		move (e.clouds,{mode=bounce,x={-50,128},y={-50,128}})
+		while (#e.clouds<4) do
+			cloud={sprite=rnd(s.clouds),y=flr(rnd(15))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
 			if (cloud.dx<0) then
 				cloud.x = 128+flr(rnd(30))
 			else
@@ -301,6 +317,13 @@ gs.update=
 			end	
 			add(e.clouds,cloud)
 		end
+		if (frame%20==0)then
+			cloud=e.clouds[(frame\20)%#e.clouds+1]
+			fixing={sprite=rnd(s.fixings),x=min(max(cloud.x+flr(rnd(20))+5,5),110),y=cloud.y+10,mirror=rnd({true,false}),dx=0,dy=1,dt=1, maxdx=0, maxdy=4, acc=0}
+			add(e.fixings, fixing)
+		end
+		move (e.fixings,{mode=remove,y={128,128},x={-50,128}})
+		
 
 		frame+=1
 	end,
@@ -334,18 +357,18 @@ b4444545454555555d5d5d5ddddddddddededededeeeeeeeeeefefefefefefefefefefefefeeeeee
 45454555555d5d5d5ddddddededededeeeeeefefefefefefefffffffffffffffffffffffffffefefefefefefeeeeeedededededddddd5d5d5d555545454444b4
 54545555d5d5d5ddddddedededeeeeeefefefefefffffffffff00000000000000000000000fffffffffffefefefefeeeeeededededddddd5d5d5d5545454544b
 45555d5d5d5ddddddedededeeeefefefefefffffff00000000000000000000000000000000000000000fffffffefefefefeeeededededddddd5d5d5555454544
-5555d5d5ddddddedededeeeefefefeffffff00000000000000000000000000000000000000000000000000000ffffffefefefeeeededededddddd5d555545454
-5d5d5ddddddedededeeeefefeffffff000000000000000000000000000000000000000000000000000000000000000ffffffefefeeeededededddd5d5d555545
-d5d5ddddedededeeeefefefffff00000000000000000000000000000000000000000000000000000000000000000000000fffffefefeeeededededddd5d55554
-5ddddedededeeeefefeffff0000000000000000000000000000000000000000000000000000000000000000000000000000000ffffefefeeeedededddd5d5d55
-ddddededeeeefefeffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffefefeeeedededddd5d5
-dededeeeefefeffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffefefeedededddd5d
-ededeefefeffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffefeeeedededdd
-deeeefeffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffefeededede
+5555d5d5ddddddedededeeeefefefeffffff00000000000000000000333333333322233300000000000000000ffffffefefefeeeededededddddd5d555545454
+5d5d5ddddddedededeeeefefeffffff0000000000000000000000000322233333b222b330000000000000000000000ffffffefefeeeededededddd5d5d555545
+d5d5ddddedededeeeefefefffff000000000000000000000000000002277223322bbb22300000000000000000000000000fffffefefeeeededededddd5d55554
+5ddddedededeeeefefeffff0000000000000000000000000000000007777772322222223000000000000000000000000000000ffffefefeeeedededddd5d5d55
+ddddededeeeefefeffff000000000000000000000000000000000000f777777f22bbb223000000000000000000000000000000000ffffefefeeeedededddd5d5
+dededeeeefefeffff0000000000000000000000000000000000000003f777ff33b222b33000000000000000000000000000000000000ffffefefeedededddd5d
+ededeefefeffff000000000000000000000000000000000000000000337ff33333222333000000000000000000000000000000000000000ffffefeeeedededdd
+deeeefeffff0000000000000000000000000000000000000000000003333333333333333000000000000000000000000000000000000000000ffffefeededede
 eefeffff0000000000000000000000000000000f0fff0f0f000000000000000000000000ff0000000000000000000000000000000000000000000ffefeeeeded
 efefff000000000000000000000000000009effefe0efe9effe0f000000000000000000000f0000000000000000000000000000000000000000000ffffefeede
 ffff00000000000000000000000000000fefffdffffffdf0f0f0f0f00000000000000000000f00000000000000000000000000000000000000000000fffefeee
-f000000000000000000000000000000fe9f7d7f7f7d7fffefdfe90e0f00000000000000000bfb000000000000000000000000000000000000000000000ffffef
+f000000000000000000000000000000fe9f7d7f7f7d7fffefdfe90e0f00000000000000000bbb000000000000000000000000000000000000000000000ffffef
 00000000000000000000000000000feffef77777777777fdffffe9f0e9000000000000000bbbbb00000000000000000000000000000000000000000000000fff
 000000000000000000000000000feff77f7777727777777f0ef0fdff00e0f000000000000bbb8b0000000000000000000000000000000000000000000000000f
 00000000000000000000000000fef777727777efd7727d7ff77e0fefe90f0f00000000000bbbbb00000000000000000000000000000000000000000000000000
@@ -438,6 +461,135 @@ da9ddadda9dd00004cc44c44cc440000000000000003333233333332333322333333332333333000
 00000000000000000000000000000000000233322333333333332000000000000000000000000000100000990001000000000000000050000000000099000001
 000000000000000000000000000000000000222022222332222200000000000000000000000000001000009900000000000000000000d0000000000000000001
 000000000000000000000000000000000000000000022222220000000000000000000000000000001000000000000000000000000000d0000000000000000000
+__label__
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccc66666666ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccd66666666666666ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccc666666666666666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccd66666666666666666666ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccc6666666666666666666666ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddccccccccccccccccccc
+ccc666666666666d666666666666dcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddccccccccccccccccc
+666d6666666d6666dd66666666d666666cccccccccccccccccccc7c7c7ccccc7c7ccc7c7c7cccccccccccccccccccccccccddddddddddddddddccccccccccccc
+666ddd666dd6666666ddd666dd666666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccddddddddddddddddddcccccccccccc
+66666dddd66666666666dddd666666d6666dccccccccccccccccccc7ccccc7ccccccc7ccccccccccccccccccccccccddddddddddddddd0dddd00dddccccccccc
+666666666666666666666666d666dd666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddd0dddddddddd0000ddddddcccccccc
+66666666666d666d666666666ddd66666666ccccccccccccccccccc7ccccc7ccccccc7c7ccccccccccccccccccccdddddddd00ddddddddddddddddddcccccccc
+6d666666666dddd66666666666666666666dccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddd00ddd0ddddddddddddcccccccc
+6d66666666dd66666666666666666666666dccccccccccccccccccc7ccccc7ccccccc7cccccccccccccccccccccddddddddddddd000dd0dddddddddccccccccc
+66d6666ddd6666666777777766666666666dcccccccccccccccccccccccccccccccccccccccccccccccccccccccddddddddddddddddddd0dddddddcccccccccc
+6666666666666667777777777766666666ddccccccccccccccccc7c7c7ccccc7c7ccc7c7c7cccccccccccccccccddddddddddddd0dddddd000000ccccccccccc
+ddddddd666666d7777777777777777666ddcccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddd00ddddddddd0cccccccccccccc
+cccdddddddddd7777777777777777776ddccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0dddddd000ddddddddd0ccccccccccccccc
+ccccccccc7777777777777776777766777cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0ddd00ddddddddddd0cccccccccccccccc
+cccccccc777777677777777776666777777cccccccccccc7c7ccc7c7c7ccc7c7c7ccc7c7c7ccc7c7c7ccccccccccccc000c00000dd00000ccccccccccccccccc
+ccccccc7777777766777777777777777777ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000ccccccccccccccccccc
+ccccccc7777777777667776777777777777cccccccccc7ccccccc7ccc7ccc7ccccccc7ccc7ccc7c7c7cccccccccccccccccccccccccccccccccccccccccccccc
+cccccc7777777777777666776777777777cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccc777777777777777777767777777cccccccccccc7ccccccc7c7ccccc7c7ccccc7c7c7ccc7ccc7cccccccccccccccccccccccccccccccccccccccccccccc
+cccccc77777777777776777777666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccc7777777777667777777776cccccccccccccccc7ccccccc7ccc7ccc7ccccccc7ccc7ccc7ccc7cccccccccccccccccccccccccccccccccccccccccccccc
+cccccccc67777776667777777776cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccc677766777777777776cccccccccccccccccccc7c7ccc7ccc7ccc7c7c7ccc7ccc7ccc7ccc7cccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccc666c666667766666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccc6666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccc7c7ccc7ccccccccc7c7ccc7ccc7ccc7c7ccccccc7c7cccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccc7ccccccc7ccccccc7ccc7ccc7ccc7ccc7ccc7ccc7cccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccc7ccccccc7ccccccc7ccc7ccc7ccc7ccc7ccc7ccc7c7c7cccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccc7ccccccc7ccccccc7ccc7ccc7ccc7ccc7ccc7ccccccc7cccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccc7c7ccc7c7c7ccc7c7ccccccc7c7ccc7c7c7ccc7c7cccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccc77777cccccc777cc77ccccc777c7ccc777c7c7ccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccc77c7c77cccccc7cc7c7ccccc7c7c7ccc7c7c7c7ccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccc777c777cccccc7cc7c7ccccc777c7ccc777c777ccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccc77c7c77cccccc7cc7c7ccccc7ccc7ccc7c7ccc7ccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccc77777ccccccc7cc77cccccc7ccc777c7c7c777ccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccc444444kcccccccccccccccccccccccccccccck444444ccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccc444444444444kcccccccccccccccccck444444444444ccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccckkkk444444444444444444444444444444444kkkkkcccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccckk44kkkkkkk44444444444444444444kkkkkk4444kcccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccckk4k4k44444kkkkkkkkkkkkkkkkkkkk4444k4k444kcccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccckk444k444k444k444k444k444k444k444k444k4kccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccckk4444k4k44444k4k44444k4k44444k4k44444kkccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccckk4444k4444444k4444444k4444444k444444kcccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccckk444k4k44444k4k44444k4k44444k4k44444kcccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccckk4k444k444k444k444k444k444k444k444kccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccckkk44444k4k44444k4k44444k4k44444k4kkccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccckk4444444k4444444k4444444k4444444k4kccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccckk44444k4k44444k4k44444k4k44444k4kcccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccckkk444k444k444k444k444k444k444k44kcccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccckkk4k44444k4k44444k4k44444k4k444ccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccckk4k4444444k4444444k4444444k444kccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccckkk4k44444k4k44444k4k44444k4k44kccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccckk44k444k444k444k444k444k444kkcccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccckk444k4k44444k4k44444k4k44444kcccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccckk444k4444444k4444444k44444kccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccckk44k4k44444k4k44444k4k4444kccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccckk4k444k444k444k444k444k444kccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccckk44444k4k44444k4k44444k4kcccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccckk444444k4444444k4444444kkcccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccckk44444k4k44444k4k44444k4kccc77777777ccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccckk444k444k444k444k444k4677777777777777ccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccckkk4k44444k4k44444k4k777777777777777777cccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccckkk4444444k4444444677777777777777777777ccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccckk4k44444k4k44444k7777777777777777777777cccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccckk44k444k444k4477777777777767777777777776ccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccckk44k4k4447777677777776777766777777776777777ccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccckk444k4447777766677766777777766677766777777777ccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k4k4777777776666777777777776666777777677776cccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccckkk4447777777777777777777777777777677766777777cccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccckk44447777777777777776777677777777766677777777cccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccckk44447777767777777776666777777777777777777776cccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4446777767777777766777777777777777777777776cccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccckk444k677776777766677777777777777777777777776cccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k4466777777777777777667777777677777777766cccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccckkk4444466666667777776677777777776777777766ccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccckkk44444k46666666666777777777777766777766cccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k444k444kccccccc66777777777776ccc6666ccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk44k4k4444kcccccccc666666677766ccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk44k4444kccccccccccc66666666ccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k4k444kcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk444k4kccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4444kkccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccck44444kccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccck4444kcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk44kkcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k4kcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4kccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4kccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccck4cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccck4cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 __label__
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

@@ -8,23 +8,26 @@ wrap,bounce,remove=0,1,2
 s=
 {
 	
+	fixings=
+	{
+		{{index=73, width=1, height=1},{index=73, width=1, height=1}},
+		{{index=84, width=1, height=1},{index=105, width=1, height=1}},
+		{{index=137, width=1, height=1},{index=153, width=1, height=1}},
+	},
 	toppings=
 	{
-		cherry=
-		{{index=73, width=1, height=1},{index=73, width=1, height=1},{index=73, width=1, height=1}},
-		fudge=
-		{{index=84, width=1, height=1},{index=105, width=1, height=1},{index=121, width=1, height=1}},
-		sprinkles=
-		{{index=137, width=1, height=1},{index=153, width=1, height=1},{index=169, width=1, height=1}},
+		{{index=73, width=1, height=1}},
+		{{index=121, width=1, height=1}},
+		{{index=169, width=1, height=1}},
 	},
 	scoops=
 	{
-		vanilla={{index=80, width=2, height=2}},
-		berry={{index=112, width=2, height=2}},
-		choco={{index=144, width=2, height=2}},
-		mint={{index=176, width=2, height=2}},
-		orange={{index=178, width=2, height=2}},
-		ripple={{index=208, width=2, height=2}}
+		{{index=80, width=2, height=2}},
+		{{index=112, width=2, height=2}},
+		{{index=144, width=2, height=2}},
+		{{index=176, width=2, height=2}},
+		{{index=178, width=2, height=2}},
+		{{index=208, width=2, height=2}}
 	},
 	cones=
 	{
@@ -95,19 +98,10 @@ end
 function _init()
 	pal({[0]=0, 4, 6, 7, 9,135, 12, 13, 14,132,3, 8, 137, 139, 140, 141}, 1)
 	gamestate=1
-	level=1
 	frame=0
 	gravity=0.3
     friction=0.75
-	s.fixings=
-	{
-		{{index=80, width=2, height=2}},
-		{{index=112, width=2, height=2}},
-		{{index=144, width=2, height=2}},
-		{{index=176, width=2, height=2}},
-		{{index=178, width=2, height=2}},
-		{{index=208, width=2, height=2}},
-	}
+	--s.fixings=s.scoops
 	e=
 	{
 		gray_cloudcover=
@@ -217,8 +211,8 @@ gs.draw={
 		palt(black,true)
 		palt(white,true)
 		render({sprite=s.professor,x=116,y=11})
-		render({sprite=s.toppings.cherry,x=115,y=49})
-		render({sprite=s.scoops.berry,x=112,y=68})
+		render({sprite=s.toppings[1],x=115,y=49})
+		render({sprite=s.scoops[2],x=112,y=68})
 		palt(white,false)
 
 	end,
@@ -235,9 +229,24 @@ gs.draw={
 		pal(white,white)
 		pal(gray,gray)
 		foreach(e.player,render)
-		foreach(e.fixings,render)
+		foreach(e.scoops,render)
 		foreach(e.clouds,render)
-		
+		print("\#6"..timer,115,2,white)
+		if showorder then
+			rectfill(48,27,77,63,blue)
+			rect(47,26,78,64,white)
+			print("O",72,28)
+			print("R",72,33)
+			print("D",72,38)
+			print("E",72,43)
+			print("R",72,48)
+			print("\142",70,58)
+			line(48,65,79,65,dark_purple)
+			line(79,28,79,65,dark_purple)
+			foreach(e.order.scoops,render)
+			foreach(e.order.toppings,render)
+		end
+				
 		
 	end,
 	function () --big blue marble
@@ -272,6 +281,9 @@ gs.update=
 	end,
 	function()  -- newspaper page 2
 		if btnp()>0 then
+			level=1
+			timer=60
+			showorder=true
 			_draw=gs.draw[4]
 			_update=gs.update[4]
 			e=
@@ -284,10 +296,11 @@ gs.update=
 					{sprite=rnd(s.clouds),x=80+rnd(10),y=rnd(10),mirror=rnd{true,false}},
 					{sprite=rnd(s.clouds),x=112+rnd(10),y=rnd(10),mirror=rnd{true,false}}
 				},
-				fixings={},
+				scoops={},
+				order={scoops={},toppings={}},
 				player=
 				{
-					{sprite=s.cones.small,x=60,y=92,dx=0,dy=0,dt=1,maxdx=5,maxdy=0,acc=1}
+					{sprite=s.cones.small,x=58,y=92,dx=0,dy=0,dt=1,maxdx=5,maxdy=0,acc=1}
 				},
 				clouds=
 				{
@@ -299,32 +312,61 @@ gs.update=
 		end
 	end,
 	function() -- park
-		local cloud,fixing
-		for p in all(e.player) do
-			if (btn(left)) p.dx-=p.acc 
-			if (btn(right)) p.dx+=p.acc 
-			p.dx*=friction
-			p.dx=mid(-p.maxdx,p.dx,p.maxdx)
-		end	
-		move(e.player,{mode=wrap,x={-12,128}})
-		move (e.clouds,{mode=bounce,x={-50,128},y={-50,128}})
-		while (#e.clouds<4) do
-			cloud={sprite=rnd(s.clouds),y=flr(rnd(15))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
-			if (cloud.dx<0) then
-				cloud.x = 128+flr(rnd(30))
-			else
-				cloud.x= -50-flr(rnd(30))
-			end	
-			add(e.clouds,cloud)
-		end
-		if (frame%20==0)then
-			cloud=e.clouds[(frame\20)%#e.clouds+1]
-			fixing={sprite=rnd(s.fixings),x=min(max(cloud.x+flr(rnd(20))+5,5),110),y=cloud.y+10,mirror=rnd({true,false}),dx=0,dy=1,dt=1, maxdx=0, maxdy=4, acc=0}
-			add(e.fixings, fixing)
-		end
-		move (e.fixings,{mode=remove,y={128,128},x={-50,128}})
-		
+		local cloud,scoop,mirror
+		if (btnp(fire1)) showorder=not(showorder)
+		if #e.order.scoops== 0 and #e.order.toppings then
+			showorder=true
+			if level==1 then
+				for i=0,1 do
+					mirror=rnd({true,false})
+					add(e.order.scoops,{sprite=rnd(s.scoops),x=57,y=40-i*11,mirror=mirror,dx=0,dy=1,dt=1, maxdx=0, maxdy=4, acc=0})
+					if (mirror) e.order.scoops[#e.order.scoops].x=53
+				end
 
+			elseif level ==2 then
+				for i=0,2 do
+					mirror=rnd({true,false})
+					add(e.order.scoops,{sprite=rnd(s.scoops),x=57,y=51-i*11,mirror=mirror,dx=0,dy=1,dt=1, maxdx=0, maxdy=4, acc=0})
+					if (mirror) e.order.scoops[#e.order.scoops].x=53
+				end
+			else  -- level 3
+				for i=0,2 do
+					mirror=rnd({true,false})
+					add(e.order.scoops,{sprite=rnd(s.scoops),x=57,y=51-i*11,mirror=mirror,dx=0,dy=1,dt=1, maxdx=0, maxdy=4, acc=0})
+					if (mirror) e.order.scoops[#e.order.scoops].x=53
+				end
+				add(e.order.toppings,{sprite=rnd(s.toppings),x=50,y=29,mirror=false,dx=0,dy=1,dt=1, maxdx=0, maxdy=4, acc=0})
+			end	
+		end
+		if not showorder then
+			for p in all(e.player) do
+				if (btn(left)) p.dx-=p.acc 
+				if (btn(right)) p.dx+=p.acc 
+				p.dx*=friction
+				p.dx=mid(-p.maxdx,p.dx,p.maxdx)
+			end	
+			
+			while (#e.clouds<4) do
+				cloud={sprite=rnd(s.clouds),y=flr(rnd(15))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
+				if (cloud.dx<0) then
+					cloud.x = 128+flr(rnd(30))
+				else
+					cloud.x= -50-flr(rnd(30))
+				end	
+				add(e.clouds,cloud)
+			end
+			if (frame%20==0)then
+				cloud=e.clouds[(frame\20)%#e.clouds+1]
+				scoop={sprite=rnd(s.scoops),x=min(max(cloud.x+flr(rnd(20))+5,5),110),y=cloud.y+10,mirror=rnd({true,false}),dx=0,dy=1,dt=1, maxdx=0, maxdy=4, acc=0}
+				add(e.scoops, scoop)
+			end
+			
+			move(e.player,{mode=wrap,x={-12,128}})
+			move (e.clouds,{mode=remove,x={-50,128},y={-50,128}})
+			move (e.scoops,{mode=remove,y={128,128},x={-50,128}})
+			
+		end
+		if (frame%30 ==0) timer-=1
 		frame+=1
 	end,
 	function() -- conclusion
@@ -389,13 +431,13 @@ f000000000000000000000000000000fe9f7d7f7f7d7fffefdfe90e0f00000000000000000bbb000
 00000000000000000efe7fef722272f7220fd1d79717d9d90d921222277e777e00fe0e0f00099990000009991119111911191119111911191119119000000000
 0000000000000000efef7e7e722222277e0f17115f79199d19d1d222222027f0f000f00000000000000000999191111191911111919111119191110000000000
 0000000000000000fefefe7f772762727f079d1779d1d9d9f777232227df070e0e0e00e900000000000000991911111119111111191111111911190000000000
-00008b8800000000efe7ef77722722277e77121715ff1d12d1222f7d0ff72e0f00f0e09099199900000000999191111191911111919111119191190000000000
-000888b880000000feffef772727e2272722d721d71d11729722d1df222e900e0e0f00e099991990000000099119111911191119111911191119900000000000
-008888b8b8000000efeef7e722677277272232232212171d9d2f9d9000e00e00f0e0e09099911990000000099111919111119191111191911111900000000000
-008bbb888b0000007efe7e77e73222222272232217575d9912ddf0f0e00f0e0e0e0ff0e009999900000000009911191111111911111119111119000000000000
-0b88888bb8800000e7efefef7e227722272772227d17ff12d0000e0fe9e0e0f0f0f0e00f00999090000000009911919111119191111191911119000000000000
-088b888888b0000077eff77effe2222262e32237997571d000e00f0fe000f0e0e0e00f0e09000000000000009919111911191119111911191119000000000000
-8bb88b88bb880000e7feeef7eff722777222777fdd972d1fe00f00e00e0e0f0f7f0fe00f99000000000000000991111191911111919111119190000000000000
+00008b8800000000efe7ef77722722277e77121715ff1d12d1222f7d0ff72e0f00f0e09000999000000000999191111191911111919111119191190000000000
+000888b880000000feffef772727e2272722d721d71d11729722d1df222e900e0e0f00e009999900000000099119111911191119111911191119900000000000
+008888b8b8000000efeef7e722677277272232232212171d9d2f9d9000e00e00f0e0e09099191990000000099111919111119191111191911111900000000000
+008bbb888b0000007efe7e77e73222222272232217575d9912ddf0f0e00f0e0e0e0ff0e099911990000000009911191111111911111119111119000000000000
+0b88888bb8800000e7efefef7e227722272772227d17ff12d0000e0fe9e0e0f0f0f0e00f09999900000000009911919111119191111191911119000000000000
+088b888888b0000077eff77effe2222262e32237997571d000e00f0fe000f0e0e0e00f0e00999000000000009919111911191119111911191119000000000000
+8bb88b88bb880000e7feeef7eff722777222777fdd972d1fe00f00e00e0e0f0f7f0fe00f00000000000000000991111191911111919111119190000000000000
 088888bb8880000077e7fefefee227ef7f322772729757700f0e0e07fff0efe777e90e9000000000000000000991111119111111191111111990000000000000
 000b88888b000000e27e7fefeff27e7e072f277777d17710e00ef0000ef0f0fe7f70e0f00000e000000000000991111191911111919111119190000000000000
 00000bbb00000000f77272efefefefffefe77777177d9d1e0f0f2fef0fe0ef0f77e900e0d0c00000000000000099111911191119111911191900000000000000
@@ -590,135 +632,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-__label__
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccc66666666ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccd66666666666666ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccc666666666666666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccd66666666666666666666ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccc6666666666666666666666ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddccccccccccccccccccc
-ccc666666666666d666666666666dcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddccccccccccccccccc
-666d6666666d6666dd66666666d666666cccccccccccccccccccc7c7c7ccccc7c7ccc7c7c7cccccccccccccccccccccccccddddddddddddddddccccccccccccc
-666ddd666dd6666666ddd666dd666666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccddddddddddddddddddcccccccccccc
-66666dddd66666666666dddd666666d6666dccccccccccccccccccc7ccccc7ccccccc7ccccccccccccccccccccccccddddddddddddddd0dddd00dddccccccccc
-666666666666666666666666d666dd666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddd0dddddddddd0000ddddddcccccccc
-66666666666d666d666666666ddd66666666ccccccccccccccccccc7ccccc7ccccccc7c7ccccccccccccccccccccdddddddd00ddddddddddddddddddcccccccc
-6d666666666dddd66666666666666666666dccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddd00ddd0ddddddddddddcccccccc
-6d66666666dd66666666666666666666666dccccccccccccccccccc7ccccc7ccccccc7cccccccccccccccccccccddddddddddddd000dd0dddddddddccccccccc
-66d6666ddd6666666777777766666666666dcccccccccccccccccccccccccccccccccccccccccccccccccccccccddddddddddddddddddd0dddddddcccccccccc
-6666666666666667777777777766666666ddccccccccccccccccc7c7c7ccccc7c7ccc7c7c7cccccccccccccccccddddddddddddd0dddddd000000ccccccccccc
-ddddddd666666d7777777777777777666ddcccccccccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddd00ddddddddd0cccccccccccccc
-cccdddddddddd7777777777777777776ddccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0dddddd000ddddddddd0ccccccccccccccc
-ccccccccc7777777777777776777766777cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0ddd00ddddddddddd0cccccccccccccccc
-cccccccc777777677777777776666777777cccccccccccc7c7ccc7c7c7ccc7c7c7ccc7c7c7ccc7c7c7ccccccccccccc000c00000dd00000ccccccccccccccccc
-ccccccc7777777766777777777777777777ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000ccccccccccccccccccc
-ccccccc7777777777667776777777777777cccccccccc7ccccccc7ccc7ccc7ccccccc7ccc7ccc7c7c7cccccccccccccccccccccccccccccccccccccccccccccc
-cccccc7777777777777666776777777777cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccc777777777777777777767777777cccccccccccc7ccccccc7c7ccccc7c7ccccc7c7c7ccc7ccc7cccccccccccccccccccccccccccccccccccccccccccccc
-cccccc77777777777776777777666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccc7777777777667777777776cccccccccccccccc7ccccccc7ccc7ccc7ccccccc7ccc7ccc7ccc7cccccccccccccccccccccccccccccccccccccccccccccc
-cccccccc67777776667777777776cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccc677766777777777776cccccccccccccccccccc7c7ccc7ccc7ccc7c7c7ccc7ccc7ccc7ccc7cccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccc666c666667766666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccc6666666cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccc7c7ccc7ccccccccc7c7ccc7ccc7ccc7c7ccccccc7c7cccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccc7ccccccc7ccccccc7ccc7ccc7ccc7ccc7ccc7ccc7cccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccc7ccccccc7ccccccc7ccc7ccc7ccc7ccc7ccc7ccc7c7c7cccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccc7ccccccc7ccccccc7ccc7ccc7ccc7ccc7ccc7ccccccc7cccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccc7c7ccc7c7c7ccc7c7ccccccc7c7ccc7c7c7ccc7c7cccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccc77777cccccc777cc77ccccc777c7ccc777c7c7ccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccc77c7c77cccccc7cc7c7ccccc7c7c7ccc7c7c7c7ccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccc777c777cccccc7cc7c7ccccc777c7ccc777c777ccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccc77c7c77cccccc7cc7c7ccccc7ccc7ccc7c7ccc7ccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccc77777ccccccc7cc77cccccc7ccc777c7c7c777ccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccc444444kcccccccccccccccccccccccccccccck444444ccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccc444444444444kcccccccccccccccccck444444444444ccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccckkkk444444444444444444444444444444444kkkkkcccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccckk44kkkkkkk44444444444444444444kkkkkk4444kcccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccckk4k4k44444kkkkkkkkkkkkkkkkkkkk4444k4k444kcccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccckk444k444k444k444k444k444k444k444k444k4kccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccckk4444k4k44444k4k44444k4k44444k4k44444kkccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccckk4444k4444444k4444444k4444444k444444kcccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccckk444k4k44444k4k44444k4k44444k4k44444kcccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccckk4k444k444k444k444k444k444k444k444kccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccckkk44444k4k44444k4k44444k4k44444k4kkccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccckk4444444k4444444k4444444k4444444k4kccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccckk44444k4k44444k4k44444k4k44444k4kcccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccckkk444k444k444k444k444k444k444k44kcccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccckkk4k44444k4k44444k4k44444k4k444ccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccckk4k4444444k4444444k4444444k444kccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccckkk4k44444k4k44444k4k44444k4k44kccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccckk44k444k444k444k444k444k444kkcccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccckk444k4k44444k4k44444k4k44444kcccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccckk444k4444444k4444444k44444kccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccckk44k4k44444k4k44444k4k4444kccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccckk4k444k444k444k444k444k444kccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccckk44444k4k44444k4k44444k4kcccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccckk444444k4444444k4444444kkcccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccckk44444k4k44444k4k44444k4kccc77777777ccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccckk444k444k444k444k444k4677777777777777ccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccckkk4k44444k4k44444k4k777777777777777777cccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccckkk4444444k4444444677777777777777777777ccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccckk4k44444k4k44444k7777777777777777777777cccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccckk44k444k444k4477777777777767777777777776ccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccckk44k4k4447777677777776777766777777776777777ccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccckk444k4447777766677766777777766677766777777777ccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k4k4777777776666777777777776666777777677776cccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccckkk4447777777777777777777777777777677766777777cccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccckk44447777777777777776777677777777766677777777cccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccckk44447777767777777776666777777777777777777776cccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4446777767777777766777777777777777777777776cccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccckk444k677776777766677777777777777777777777776cccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k4466777777777777777667777777677777777766cccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccckkk4444466666667777776677777777776777777766ccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccckkk44444k46666666666777777777777766777766cccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k444k444kccccccc66777777777776ccc6666ccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk44k4k4444kcccccccc666666677766ccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk44k4444kccccccccccc66666666ccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k4k444kcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk444k4kccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4444kkccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccck44444kccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccck4444kcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk44kkcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4k4kcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4kccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccckk4kccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccck4cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccck4cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 __map__
 000002030405060707090a0b0c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 101112131415161717191a1b1c1d1e1f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -737,10 +650,11 @@ fafbfc0000000000000000000000feff000000000000000000000000000000000000000000000000
 000000000000cd00e8e900fd00cb0f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 ccf80eddddf8cdedf8f9f000db0e0edc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-41040000195671955719547195371952719527195171c517000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005
-450212003d5743d5703d5603d5603d5403d5403d5303d5303d5503d5503d5403d5403d5303d5303d5203d5103d5103d5153d5353d5353d5203d5203d5103d5103d5103d5103d5103d5103d5103d5103d51000000
-000402003d0303d030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+410200003d5703d5703d5703d5603d5603d5603d5503d5503d5403d5403d5403d5303d5303d5703d5703d5703d5603d5603d5603d5503d5503d5403d5403d5403d5303d5303d5303d5203d5203d5203d5103d515
+a91920002b0502b0502b0502b05028050280502b050290502b0502b0502b0502b0502b05028050280502b05029050280503d0003d0003d0003d0003d0003d0003d0003d0003d0003d0003d0003d0003d00000000
+01022000000000000000000000000000000000000000000000000000000000000000000000000000000000003d5743d5703d5603d5603d5403d5403d5303d5303d5503d5503d5403d5403d5303d5303d5203d515
+000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __music__
-00 01404040
-04 02404040
+00 00014040
+04 42404040
 

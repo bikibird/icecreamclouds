@@ -377,6 +377,7 @@ gs.update=
 					{sprite=rnd(s.clouds),x=112+rnd(10),y=rnd(10),mirror=rnd{true,false}}
 				},
 				scoops={},
+				toppings={},
 				order={scoops={},toppings={}},
 				player=
 				{
@@ -423,6 +424,9 @@ gs.update=
 			end
 			if #e.order.scoops== 0 and #e.order.toppings==0 then
 				showorder=true
+				newcone=true
+				e.scoops={}
+				e.toppings={}
 				if level==1 then
 					for i=0,1 do
 						add(e.order.scoops,{sprite=rnd(s.scoops),x=55,y=40-i*11,mirror=rnd({true,false}),dx=0,dy=0,dt=1, maxdx=0, maxdy=4, acc=0})
@@ -434,7 +438,7 @@ gs.update=
 						add(e.order.scoops,{sprite=rnd(s.scoops),x=55,y=51-i*11,mirror=rnd({true,false}),dx=0,dy=0,dt=1, maxdx=0, maxdy=4, acc=0})
 					end
 				else  -- level 3
-					for i=0,3 do
+					for i=0,2 do
 						mirror=rnd({true,false})
 						add(e.order.scoops,{sprite=rnd(s.scoops),x=55,y=51-i*11,mirror=rnd({true,false}),dx=0,dy=0,dt=1, maxdx=0, maxdy=2, acc=0})
 					end

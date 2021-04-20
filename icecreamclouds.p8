@@ -1,10 +1,50 @@
 pico-8 cartridge // http://www.pico-8.com
 version 32
 __lua__
-
+-- for the bullfrog's birthday
+-- by jenny Schmidt (@bikibird) except as noted below
+-- some tree sprites adapted from nerdyteachers.com
+-- iris effect and sprite rotation adapted from code by @freds72
+-- big blue marble from nasa and adapted with https://bikibird.itch.io/depict
 left,right,up,down,fire1,fire2=0,1,2,3,4,5
 black,brown, gray, white,orange, yellow, blue, purple, pink,dark_brown,dark_green, red, dark_orange, green, dark_blue, dark_purple =0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 wrap,bounce,remove=0,1,2
+function invcircfill(r,c) 
+--@freds72, https://www.lexaloffle.com/bbs/?pid=67730
+    local r2=r*r
+    color(c)
+    for j=-1,128 do
+        local y=64-j
+        local x=sqrt(r2-y*y)
+        rectfill(-1,j,64-x+1,j)
+        rectfill(64+x-1,j,128,j)
+    end
+end
+function spr_r(s,x,y,a,w,h)
+--@freds72,https://www.lexaloffle.com/bbs/?tid=3593
+	sw=(w or 1)*8
+	sh=(h or 1)*8
+	sx=(s%8)*8
+	sy=s\16*8
+	x0=flr(0.5*sw)
+	y0=flr(0.5*sh)
+	a=a/360
+	sa=sin(a)
+	ca=cos(a)
+	for ix=0,sw-1 do
+	 for iy=0,sh-1 do
+	  dx=ix-x0
+	  dy=iy-y0
+	  xx=flr(dx*ca-dy*sa+x0)
+	  yy=flr(dx*sa+dy*ca+y0)
+	  if (xx>=0 and xx<sw and yy>=0 and yy<=sh) then
+		c=sget(sx+xx,sy+yy)
+		if (c>0) pset(x+ix,y+iy,c)
+	  end
+	 end
+	end
+   end
+
 levelcolors={white,blue,white, blue, white}
 s=
 {
@@ -48,23 +88,16 @@ function render(entity)
 	else
 		step=#entity.sprite
 	end	
-	sprite=entity.sprite[step]
-	spr(sprite.index,entity.x,entity.y,sprite.width,sprite.height,entity.mirror,entity.flip)
+	if (not (entity.angle==nil)) then
+		sprite=entity.sprite[step]
+		spr_r(sprite.index,entity.x,entity.y,entity.angle,sprite.width,sprite.height)
+	else
+		sprite=entity.sprite[step]
+		spr(sprite.index,entity.x,entity.y,sprite.width,sprite.height,entity.mirror,entity.flip)
+	end	
+	
 end
-
-function rotate(x,y,cx,cy,angle)
-    local sina=sin(angle)
-    local cosa=cos(angle)
-   
-    x-=cx
-    y-=cy
-    local rotx=cosa*x-sina*y
-    local roty=sina*x+cosa*y
-    rotx+=cx
-    roty+=cy
-   
-    return rotx,roty
-end
+ 
 function hit()
 	local i=1
 	local s,badorder,fixing
@@ -89,6 +122,7 @@ function hit()
 						if #e.order.scoops==0 and #e.order.toppings== 0 then
 							sfx(1)
 							newcone=true
+							statistics[level]+=1
 						end
 
 						return	
@@ -100,20 +134,26 @@ function hit()
 								fixing[key]=value
 							end
 							fixing.x=fixing.x-rnd(20)+10
+							fixing.dx=rnd{1,-1}
+							fixing.dy=1
+							fixing.dt=1
+							fixing.acc=0
 							fixing.flip=true
-							if i==1 then
-								fixing.y=105-rnd(5)+3	
-							else	
-								fixing.y=120-rnd(5)+3	
-							end	
+							--if i==1 then
+							--	fixing.y=105-rnd(5)+3	
+							--else	
+							--	fixing.y=120-rnd(5)+3	
+							--end	
 							add(badorder,fixing)
 						end
+						badorder[1].angle=10
 
 						add(e.badorders,badorder)
 						while #e.player>1 do
 							deli(e.player)
 						end
 						e.order={scoops={},toppings={}}
+						sfx(3)
 						return
 					end	
 				end
@@ -152,6 +192,7 @@ function hit()
 						deli(e.order.toppings,1)
 						if #e.order.toppings==0 and #e.order.toppings== 0 then
 							sfx(1)
+							statistics[level]+=1
 							newcone=true
 						end
 
@@ -164,15 +205,19 @@ function hit()
 								fixing[key]=value
 							end
 							fixing.x=fixing.x-rnd(20)+10
+							fixing.dx=rnd{1,-1}
+							fixing.dy=1
+							fixing.dt=1
+							fixing.acc=0
 							fixing.flip=true
-							if i==1 then
-								fixing.y=105-rnd(5)+3	
-							else	
-								fixing.y=120-rnd(5)+3	
-							end	
+							--if i==1 then
+							--	fixing.y=105-rnd(5)+3	
+							--else	
+							--	fixing.y=120-rnd(5)+3	
+							--end	
 							add(badorder,fixing)
 						end
-
+						badorder[1].angle=10
 						add(e.badorders,badorder)
 						while #e.player>1 do
 							deli(e.player)
@@ -264,7 +309,6 @@ function _init()
 	frame=0
 	gravity=0.05
     friction=0.75
-	--s.fixings=s.scoops
 	e=
 	{
 		gray_cloudcover=
@@ -294,7 +338,7 @@ e={clouds={},scoops={},cone={}}
 gs={draw={},update={}}
 
 gs.draw={
-	title=function()  --Title screen
+	title=function() 
 		cls(blue)
 		pal(white,gray)
 		pal(gray, purple)
@@ -314,7 +358,7 @@ gs.draw={
 		render(e.bigcone)
 		render({sprite=s.clouds[2],x=52,y=87})
 	end,
-	newspaper1=function () -- newspaper page 1
+	newspaper1=function () 
 		cls(white)
 		color(black)
 		
@@ -345,7 +389,7 @@ gs.draw={
 		render({sprite=s.tinycloud,x=117,y=82})
 		render({sprite=s.baseball,x=118,y=101})
 	end,
-	newspaper2=function () -- newspaper page 2
+	newspaper2=function () 
 		cls(white)
 		rectfill(0,86,128,128,blue)
 		color(black)
@@ -369,8 +413,6 @@ gs.draw={
 		print("          \151 to start")
 		print("        \142 review order")
 		print("           \139 \145 move")
-		
-	
 		
 		palt(black,true)
 		palt(white,true)
@@ -402,7 +444,11 @@ gs.draw={
 		
 		print("\#6"..timer,115,2,white)
 		if delay >0 then
-			print("\#6level "..level,50,42,levelcolors[delay])
+			if level < 4 then
+				print("\#6level "..level,50,42,levelcolors[delay])
+			else
+				print("\#6time's up",44,42,levelcolors[delay])
+			end		
 		else
 			if showorder then
 				rectfill(48,27,77,63,blue)
@@ -419,16 +465,54 @@ gs.draw={
 				foreach(e.order.toppings,render)
 			end
 		end	
-				
-		
 	end,
-	function () --big blue marble
-		
-		cls(black)
+	statistics= function()
+		if fadein >= 0 then
+			invcircfill(fadein,blue)
+		else	
+			pal(white,gray)
+			pal(gray, purple)
+			foreach(e.gray_cloudcover,render)
+			foreach(e.gray_clouds,render)
+			pal(white,purple)
+			pal(gray,dark_puple)
+			foreach(e.purple_cloudcover,render)
+			pal(white,white)
+			pal(gray,gray)
+			foreach(e.white_cloudcover,render)
+			color(white)
+			print(" total : "..(statistics[1]+statistics[2]+statistics[3]),43,30)
+			print("level 1: "..statistics[1],43,38)
+			print("level 2: "..statistics[2],43,46)
+			print("level 3: "..statistics[3],43,54)
+			render(e.bigcone)
+			render({sprite=s.clouds[2],x=52,y=87})
+			if (fadeout <101) invcircfill(fadeout,blue)
+		end
+	end,
+	epilogue=function () --big blue marble
+		if fadein > 0 then
+			invcircfill(fadein,blue)
+		else
+			cls(black)
+			for star in all(stars) do
+				pset(star.x,star.y,star.c)
+			end
+			spr(66,36,2,7,7)
+			spr(90,42,71,6,7)
+			if fadeout < 101 then
+				invcircfill(fadeout,blue)
+			else
+				if msgx > -1065 then	
+					print(msg.."game over \151",msgx,62,blue)
 
-		spr(66,32,2,7,7)
-		spr(122,35,70,7,7)
-		
+				else
+					print(msg,msgx,62,purple)
+					print("game over \151", 40, 62,blue)
+				end		
+			end	
+		end
+
 	end
 }
 gs.update=
@@ -452,11 +536,14 @@ gs.update=
 			_update=gs.update.newspaper2
 		end
 	end,
+
+	
 	newspaper2=function()  -- newspaper page 2
 		if btnp()>0 then
 			level=1
 			timer=60
 			delay=5
+			statistics={0,0,0}
 			showorder=true
 			_draw=gs.draw.park
 			_update=gs.update.park
@@ -499,16 +586,42 @@ gs.update=
 				deli(e.cloud_cover,flr(rnd(#e.cloud_cover)+1))
 			elseif level ==3 then
 				e.cloud_cover={}
-			else
-				_draw=gs.draw.statistics
-				_update=gs.update_statistics
 			end
 			e.order={scoops={},toppings={}}
 			e.badorders={}
 			newcone=false
-			timer=90
+			timer=60
 		end	
 		if delay == 0 then
+			if level==4 then
+				e=
+				{
+					gray_cloudcover=
+					{
+						{sprite=s.clouds[2],x=-12,y=4,dx=0,dy=0},
+					},
+					purple_cloudcover=
+					{
+						{sprite=s.clouds[1],x=91,y=8}
+					},
+					white_cloudcover=
+					{
+						{sprite=s.clouds[1],x=6,y=17},
+						
+					},
+					gray_clouds=
+					{
+						{sprite=s.clouds[1],x=-10,y=44,dx=1,dt=2, dy=0,mirror=false},
+					},
+					bigcone={sprite=s.cones.big,x=41,y=63}
+				}
+				fadeout=0
+				fadein=100
+				timer=3
+				_draw=gs.draw.statistics
+				_update=gs.update.statistics
+				return
+			end
 			if (btnp(fire1)) then 
 				showorder=not(showorder) 
 				if newcone then
@@ -608,17 +721,68 @@ gs.update=
 				move (e.clouds,{mode=remove,x={-50,128},y={-50,128}})
 				move (e.scoops,{mode=remove,y={128,128},x={-50,128}})
 				move (e.toppings,{mode=remove,y={128,128},x={-50,128}})
-				
+				for badorder in all(e.badorders) do
+					move (badorder,{mode=remove,y={128,128},x={-50,128}})
+					badorder[1].angle+=10
+				end
 			end
 			if (frame%30 ==0) timer-=1
 		else
 			if (frame%12 ==0) delay-=1
 		end	
-		frame+=1
+		nextframe()
 	end,
-	function() -- conclusion
+	statistics=function() -- conclusion
+		if fadein >=0 then 
+			fadein-=1
+		elseif fadeout<101 then 
+			fadeout+=1
+		else	
+			msgx=128
+			fadeout=1
+			fadein=100
+			msg="global climate change and rainbow sprinkles are real. ice cream clouds are not. if you love this planet and the people on it, save the earth: drive less, eat less meat, switch to renewable energy, live in cities, and \^ivote\^-i for leaders who take this issue seriously before it's "
+			stars=
+			{
+				{x=flr(rnd(32)), y=flr(rnd(32)), c=purple},
+				{x=flr(rnd(32)), y=flr(rnd(32))+32, c=purple},
+				{x=flr(rnd(32)), y=flr(rnd(32))+64, c=purple},
+				{x=flr(rnd(32)), y=flr(rnd(32))+96, c=purple},
+				{x=flr(rnd(32))+32, y=flr(rnd(32))+96, c=purple},
+				{x=flr(rnd(32))+96, y=flr(rnd(32)), c=purple},
+				{x=flr(rnd(32))+96, y=flr(rnd(32))+32, c=purple},
+				{x=flr(rnd(32))+96, y=flr(rnd(32))+64, c=purple},
+				{x=flr(rnd(32))+64, y=flr(rnd(32))+96, c=purple},
+				{x=flr(rnd(32))+96, y=flr(rnd(32))+96, c=purple},
+			}
+
+
+
+			_draw=gs.draw.epilogue
+			_update=gs.update.epilogue
+			return
+		end
+		
+		nextframe()
 	end,
-	function() -- epilogue
+	epilogue=function() -- epilogue
+		music(-1)
+		if btnp(fire2) then
+			_init()
+		end
+		if fadein >=0 then 
+			fadein-=1
+		elseif fadeout<101 then 
+			fadeout+=1
+		else	
+			msgx-=1
+		end
+		for star in all(stars) do
+			if (star.c==dark_purple) star.c=purple
+			if (rnd()>.98) star.c=dark_purple
+		end
+		
+		
 	end
 }
 __gfx__
@@ -899,8 +1063,9 @@ ccf80eddddf8cdedf8f9f000db0e0edc000000000000000000000000000000000000000000000000
 __sfx__
 410200003c5703c5703c5703c5603c5603c5603c5503c5503c5403c5403c5403c5303c5303c5703c5703c5703c5603c5603c5603c5503c5503c5403c5403c5403c5303c5303c5303c5203c5203c5203c5103c515
 6d0220003c5703c5703c5703c5603c5603c5603c5503c5503c5403c5403c5403c5303c5303c5703c5703c5703c5603c5603c5603c5503c5503c5403c5403c5403c5303c5303c5303c5203c5203c5203c5103c515
-920108003c6313c6313c6313c6213c6213c6213c6113c6113c6003c6003c6003c6000c600266002560022600206001d6001a6001a6001a6001c6001d6001e6001f600226002a6001d6001c6001a6001960018600
-d7061f003f6733f6732c6733f6733e673196731067337673316732b6733f6733f6733d673376733867338673246731d6731667338673316732d67324673216731d673176733767332673276731e6731767310673
+930108003c6313c6313c6313c6213c6213c6213c6113c6113c6003c6003c6003c6000c600266002560022600206001d6001a6001a6001a6001c6001d6001e6001f600226002a6001d6001c6001a6001960018600
+010800003275432750007000070032754327503275032750007000070000700007000070000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+450f06001407014072140721407214032140150000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -928,8 +1093,7 @@ d7061f003f6733f6732c6733f6733e673196731067337673316732b6733f6733f6733d6733767338
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-d11e001f005021f5551f5551f5551f5521f5551c5521c555185021f5551e5551c5551a5551f5551a5521a555005021a5551a5551a5551a5551e55515552155551a5021a5551a5551a5551f55517552175551a555
+d11e001f005021f5351f5351f5351f5321f5351c5321c535185021f5351e5351c5351a5351f5351a5321a535005021a5351a5351a5351a5351e53515532155351a5021a5351a5351a5351f53517532175351a535
 __music__
 02 20614040
 04 42404040

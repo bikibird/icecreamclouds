@@ -712,7 +712,6 @@ gs.update=
 						topping.animate=true
 
 						if ((cloud.x >50 and cloud.dx> 0) or (cloud.x <64 and cloud.dx<0) ) topping.dx=-topping.dx
-
 						add(e.toppings, topping)
 					end	
 				end

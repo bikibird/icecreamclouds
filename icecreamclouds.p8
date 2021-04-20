@@ -754,9 +754,6 @@ gs.update=
 				{x=flr(rnd(32))+64, y=flr(rnd(32))+96, c=purple},
 				{x=flr(rnd(32))+96, y=flr(rnd(32))+96, c=purple},
 			}
-
-
-
 			_draw=gs.draw.epilogue
 			_update=gs.update.epilogue
 			return

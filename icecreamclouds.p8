@@ -4,21 +4,45 @@ __lua__
 -- for the bullfrog's birthday
 -- by jenny Schmidt (@bikibird) except as noted below
 -- some tree sprites adapted from nerdyteachers.com
--- iris effect and sprite rotation adapted from code by @freds72
+-- sprite rotation adapted from code by @freds72
 -- big blue marble from nasa and adapted with https://bikibird.itch.io/depict
 left,right,up,down,fire1,fire2=0,1,2,3,4,5
 black,brown, gray, white,orange, yellow, blue, purple, pink,dark_brown,dark_green, red, dark_orange, green, dark_blue, dark_purple =0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
-wrap,bounce,remove=0,1,2
-function invcircfill(r,c) 
---@freds72, https://www.lexaloffle.com/bbs/?pid=67730
-    local r2=r*r
-    color(c)
-    for j=-1,128 do
-        local y=64-j
-        local x=sqrt(r2-y*y)
-        rectfill(-1,j,64-x+1,j)
-        rectfill(64+x-1,j,128,j)
-    end
+wrap,bounce,remove,land=0,1,2,4
+
+function iris(r,cx,cy,c) 
+	cx=cx or 64
+	cy=cy or 64
+	local rsquare=r*r
+	local x,y=r,0
+	local ysquare, newx
+	
+	color(c or black)
+	while (y<=x) do
+		line(cx+x,cy+y,128,cy+y)
+		line(cx-x,cy+y,-1,cy+y)
+		line(cx+x,cy-y,128,cy-y)
+		line(cx-x,cy-y,-1,cy-y)
+
+		line(cy+y,cx+x,128,cx+x)
+		line(cy+y,cx-x,128,cx-x)
+		line(cy-y,cx+x,-1,cx+x)
+		line(cy-y,cx-x,-1,cx-x)
+
+		y+=1
+		ysquare=y*y
+		newx=x+1
+		if (newx)*(newx)+(ysquare) <= rsquare then
+			x=newx
+		else
+			if (x)*(x)+(ysquare) <= rsquare then
+			else
+				x-=1
+			end	
+		end
+	end
+	rectfill(-1,-1,128,64-r)
+	rectfill(-1,64+r,128,128)
 end
 function spr_r(s,x,y,a,w,h)
 --@freds72,https://www.lexaloffle.com/bbs/?tid=3593
@@ -26,8 +50,8 @@ function spr_r(s,x,y,a,w,h)
 	sh=(h or 1)*8
 	sx=(s%8)*8
 	sy=s\16*8
-	x0=flr(0.5*sw)
-	y0=flr(0.5*sh)
+	x0=sw/2
+	y0=sh/2
 	a=a/360
 	sa=sin(a)
 	ca=cos(a)
@@ -91,6 +115,7 @@ function render(entity)
 	if (not (entity.angle==nil)) then
 		sprite=entity.sprite[step]
 		spr_r(sprite.index,entity.x,entity.y,entity.angle,sprite.width,sprite.height)
+		if (not entity.landed) entity.angle+=10
 	else
 		sprite=entity.sprite[step]
 		spr(sprite.index,entity.x,entity.y,sprite.width,sprite.height,entity.mirror,entity.flip)
@@ -122,6 +147,7 @@ function hit()
 						if #e.order.scoops==0 and #e.order.toppings== 0 then
 							sfx(1)
 							newcone=true
+							goodorder=true
 							statistics[level]+=1
 						end
 
@@ -139,19 +165,11 @@ function hit()
 							fixing.dt=1
 							fixing.acc=0
 							fixing.flip=true
-							--if i==1 then
-							--	fixing.y=105-rnd(5)+3	
-							--else	
-							--	fixing.y=120-rnd(5)+3	
-							--end	
 							add(badorder,fixing)
 						end
 						badorder[1].angle=10
 
 						add(e.badorders,badorder)
-						while #e.player>1 do
-							deli(e.player)
-						end
 						e.order={scoops={},toppings={}}
 						sfx(3)
 						return
@@ -210,18 +228,10 @@ function hit()
 							fixing.dt=1
 							fixing.acc=0
 							fixing.flip=true
-							--if i==1 then
-							--	fixing.y=105-rnd(5)+3	
-							--else	
-							--	fixing.y=120-rnd(5)+3	
-							--end	
 							add(badorder,fixing)
 						end
 						badorder[1].angle=10
 						add(e.badorders,badorder)
-						while #e.player>1 do
-							deli(e.player)
-						end
 						e.order={scoops={},toppings={}}
 						return
 					end	
@@ -235,67 +245,46 @@ function move(entities,options)
 	local i=1
 	while (i<=#entities) do
 		local entity=entities[i]
-		if frame%entity.dt == 0 then
-			entity.x+=entity.dx
-			entity.y+=entity.dy
-			if (options.mode==wrap)then
-				if (not (options.x ==  nil)) then
-					if (entity.x>options.x[2]) entity.x=options.x[1]
-					if (entity.x<options.x[1]) entity.x=options.x[2]
+		if entity.landed then
+			
+		else	
+			if frame%entity.dt == 0 then
+				entity.x+=entity.dx
+				entity.y+=entity.dy
+				if (options.mode==wrap)then
+					if (not (options.x ==  nil)) then
+						if (entity.x>options.x[2]) entity.x=options.x[1]
+						if (entity.x<options.x[1]) entity.x=options.x[2]
+					end
+				elseif (options.mode==bounce) then
+					if (entity.x>options.x[2]) then
+						entity.x=options.x[2]
+						entity.dx=-entity.dx
+						entity.mirror=not entity.mirror
+					elseif (entity.x<options.x[1]) then
+						entity.x=options.x[1]
+						entity.dx=-entity.dx
+						entity.mirror=not entity.mirror
+					end	
+					
+				elseif (options.mode==remove) then
+					if ( entity.x>options.x[2] and entity.dx>0)or (entity.x<options.x[1] and entity.dx < 0) then
+						deli(entities,i)
+						i-=1						
+					elseif (entity.y>options.y[2] and entity.dy>0)or (entity.y<options.y[1] and entity.dy < 0) then
+						deli(entities,i)
+						i-=1	
+					end	
+				elseif (options.mode==land) then
+					if i ==1 and entity.y>rnd(10)+104 then
+						entity.y=rnd(10)+104
+						entity.landed=true
+					elseif entity.y>rnd(8)+114 then
+						entity.y=rnd(8)+114
+						entity.landed=true
+					end	
 				end
-			elseif (options.mode==bounce) then
-				if (entity.x>options.x[2]) then
-					entity.x=options.x[2]
-					entity.dx=-entity.dx
-					entity.mirror=not entity.mirror
-				elseif (entity.x<options.x[1]) then
-					entity.x=options.x[1]
-					entity.dx=-entity.dx
-					entity.mirror=not entity.mirror
-				end	
-				
-			elseif (options.mode==remove) then
-				if ( entity.x>options.x[2] and entity.dx>0)or (entity.x<options.x[1] and entity.dx < 0) then
-					deli(entities,i)
-					i-=1						
-				elseif (entity.y>options.y[2] and entity.dy>0)or (entity.y<options.y[1] and entity.dy < 0) then
-					deli(entities,i)
-					i-=1	
-				end	
-			end
-		end	
-		i+=1
-	end
-	while (i<=#entities) do
-		local entity=entities[i]
-		if frame%entity.dt == 0 then
-			entity.x+=entity.dx
-			entity.y+=entity.dy
-			if (options.mode==wrap)then
-				if (not (options.x ==  nil)) then
-					if (entity.x>options.x[2]) entity.x=options.x[1]
-					if (entity.x<options.x[1]) entity.x=options.x[2]
-				end
-			elseif (options.mode==bounce) then
-				if (entity.x>options.x[2]) then
-					entity.x=options.x[2]
-					entity.dx=-entity.dx
-					entity.mirror=not entity.mirror
-				elseif (entity.x<options.x[1]) then
-					entity.x=options.x[1]
-					entity.dx=-entity.dx
-					entity.mirror=not entity.mirror
-				end	
-				
-			elseif (options.mode==remove) then
-				if ( entity.x>options.x[2] and entity.dx>0)or (entity.x<options.x[1] and entity.dx < 0) then
-					deli(entities,i)
-					i-=1						
-				elseif (entity.y>options.y[2] and entity.dy>0)or (entity.y<options.y[1] and entity.dy < 0) then
-					deli(entities,i)
-					i-=1	
-				end	
-			end
+			end	
 		end	
 		i+=1
 	end
@@ -440,6 +429,7 @@ gs.draw={
 		foreach(e.clouds,render)
 		for bad in all(e.badorders) do
 			foreach(bad,render)	
+
 		end
 		
 		print("\#6"..timer,115,2,white)
@@ -467,8 +457,8 @@ gs.draw={
 		end	
 	end,
 	statistics= function()
-		if fadein >= 0 then
-			invcircfill(fadein,blue)
+		if irisin >= 0 then
+			iris(irisin,64,64,blue)
 		else	
 			pal(white,gray)
 			pal(gray, purple)
@@ -481,18 +471,23 @@ gs.draw={
 			pal(gray,gray)
 			foreach(e.white_cloudcover,render)
 			color(white)
-			print(" total : "..(statistics[1]+statistics[2]+statistics[3]),43,30)
-			print("level 1: "..statistics[1],43,38)
-			print("level 2: "..statistics[2],43,46)
-			print("level 3: "..statistics[3],43,54)
+			msg=""..(statistics[1]+statistics[2]+statistics[3]).." cones"
+			print(msg, 64-(#msg*2),30)
+			msg=""..statistics[1].." doubles"
+			print(msg, 64-(#msg*2),38)
+			msg=""..statistics[2].." triples"
+			print(msg, 64-(#msg*2),46)
+			msg=""..statistics[3].." deluxe cones"
+			print(msg, 64-(#msg*2),54)
+				
 			render(e.bigcone)
 			render({sprite=s.clouds[2],x=52,y=87})
-			if (fadeout <101) invcircfill(fadeout,blue)
+			if (irisout <101) iris(irisout,64,64,blue)
 		end
 	end,
 	epilogue=function () --big blue marble
-		if fadein > 0 then
-			invcircfill(fadein,blue)
+		if irisin > 0 then
+			iris(irisin,64,64,blue)
 		else
 			cls(black)
 			for star in all(stars) do
@@ -500,8 +495,8 @@ gs.draw={
 			end
 			spr(66,36,2,7,7)
 			spr(90,42,71,6,7)
-			if fadeout < 101 then
-				invcircfill(fadeout,blue)
+			if irisout < 80 then
+				iris(irisout,64,64,blue)
 			else
 				if msgx > -1065 then	
 					print(msg.."game over \151",msgx,62,blue)
@@ -562,7 +557,7 @@ gs.update=
 				order={scoops={},toppings={}},
 				player=
 				{
-					{sprite=s.cones.small,x=58,y=92,dx=0,dy=0,dt=1,maxdx=5,maxdy=0,acc=1}
+					{sprite=s.cones.small,x=-12,y=92,dx=5,dy=0,dt=1,maxdx=5,maxdy=0,acc=1}
 				},
 				badorders={},
 				clouds=
@@ -615,8 +610,8 @@ gs.update=
 					},
 					bigcone={sprite=s.cones.big,x=41,y=63}
 				}
-				fadeout=0
-				fadein=100
+				irisout=0
+				irisin=120
 				timer=3
 				_draw=gs.draw.statistics
 				_update=gs.update.statistics
@@ -624,24 +619,39 @@ gs.update=
 			end
 			if (btnp(fire1)) then 
 				showorder=not(showorder) 
-				if newcone then
+				if not showorder and goodorder then
 					while #e.player>1 do
 						deli(e.player)
 					end
-					newcone=false
+					e.player[1].x=rnd{-12,128}
+					if e.player[1].x<0 then
+						e.player[1].dx=5
+					else
+						e.player[1].dx=-5
+					end
+					goodorder=false	
 				end
 			end
 			if #e.order.scoops== 0 and #e.order.toppings==0 then
 				showorder=true
 				newcone=true
+				if not goodorder then
+					while #e.player>1 do
+						deli(e.player)
+					end
+					e.player[1].x=rnd{-12,128}
+					if e.player[1].x<0 then
+						e.player[1].dx=5
+					else
+						e.player[1].dx=-5
+					end
+				end
 				e.scoops={}
 				e.toppings={}
 				if level==1 then
 					for i=0,1 do
 						add(e.order.scoops,{sprite=rnd(s.scoops),x=55,y=40-i*11,mirror=rnd({true,false}),dx=0,dy=0,dt=1, maxdx=0, maxdy=4, acc=0})
-						
 					end
-
 				elseif level ==2 then
 					for i=0,2 do
 						add(e.order.scoops,{sprite=rnd(s.scoops),x=55,y=51-i*11,mirror=rnd({true,false}),dx=0,dy=0,dt=1, maxdx=0, maxdy=4, acc=0})
@@ -658,10 +668,12 @@ gs.update=
 			if not showorder then
 				hit(e.player, e.scoops)	
 				for p in all(e.player) do
-					if (btn(left)) p.dx-=p.acc 
-					if (btn(right)) p.dx+=p.acc 
-					p.dx*=friction
-					p.dx=mid(-p.maxdx,p.dx,p.maxdx)
+					if not newcone then
+						if (btn(left)) p.dx-=p.acc 
+						if (btn(right)) p.dx+=p.acc 
+						p.dx*=friction
+						p.dx=mid(-p.maxdx,p.dx,p.maxdx)
+					end	
 				end	
 				for s in all(e.scoops) do
 					s.dy+=gravity
@@ -717,29 +729,33 @@ gs.update=
 				end
 				
 				move(e.player,{mode=wrap,x={-12,128}})
+				if newcone and e.player[1].x>40 and e.player[1].x<75 then
+					newcone=false
+				end
+					
 				move (e.clouds,{mode=remove,x={-50,128},y={-50,128}})
 				move (e.scoops,{mode=remove,y={128,128},x={-50,128}})
 				move (e.toppings,{mode=remove,y={128,128},x={-50,128}})
-				for badorder in all(e.badorders) do
-					move (badorder,{mode=remove,y={128,128},x={-50,128}})
-					badorder[1].angle+=10
-				end
+				
 			end
 			if (frame%30 ==0) timer-=1
 		else
 			if (frame%12 ==0) delay-=1
 		end	
+		for badorder in all(e.badorders) do
+			move (badorder,{mode=land})
+		end
 		nextframe()
 	end,
-	statistics=function() -- conclusion
-		if fadein >=0 then 
-			fadein-=1
-		elseif fadeout<101 then 
-			fadeout+=1
+	statistics=function() 
+		if irisin >=0 then 
+			irisin-=1
+		elseif irisout<120 then 
+			irisout+=1
 		else	
 			msgx=128
-			fadeout=1
-			fadein=100
+			irisout=1
+			irisin=80
 			msg="global climate change and rainbow sprinkles are real. ice cream clouds are not. if you love this planet and the people on it, save the earth: drive less, eat less meat, switch to renewable energy, live in cities, and \^ivote\^-i for leaders who take this issue seriously before it's "
 			stars=
 			{
@@ -766,10 +782,10 @@ gs.update=
 		if btnp(fire2) then
 			_init()
 		end
-		if fadein >=0 then 
-			fadein-=1
-		elseif fadeout<101 then 
-			fadeout+=1
+		if irisin >=0 then 
+			irisin-=1
+		elseif irisout<80 then 
+			irisout+=1
 		else	
 			msgx-=1
 		end

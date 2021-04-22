@@ -6,6 +6,7 @@ __lua__
 -- some tree sprites adapted from nerdyteachers.com
 -- sprite rotation adapted from code by @freds72
 -- big blue marble from nasa and adapted with https://bikibird.itch.io/depict
+
 left,right,up,down,fire1,fire2=0,1,2,3,4,5
 black,brown, gray, white,orange, yellow, blue, purple, pink,dark_brown,dark_green, red, dark_orange, green, dark_blue, dark_purple =0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 wrap,bounce,remove,land=0,1,2,4
@@ -44,8 +45,9 @@ function iris(r,cx,cy,c)
 	rectfill(-1,-1,128,64-r)
 	rectfill(-1,64+r,128,128)
 end
-function spr_r(s,x,y,a,w,h)
---@freds72,https://www.lexaloffle.com/bbs/?tid=3593
+function rotate(s,x,y,a,w,h)
+-- based on @freds72,https://www.lexaloffle.com/bbs/?tid=3593
+	local points={}
 	sw=(w or 1)*8
 	sh=(h or 1)*8
 	sx=(s%8)*8
@@ -63,10 +65,13 @@ function spr_r(s,x,y,a,w,h)
 	  yy=flr(dx*sa+dy*ca+y0)
 	  if (xx>=0 and xx<sw and yy>=0 and yy<=sh) then
 		c=sget(sx+xx,sy+yy)
-		if (c>0) pset(x+ix,y+iy,c)
+		if (c>0) then
+			add(points,{x=x+ix,y=y+iy,c=c})
+		end	
 	  end
 	 end
 	end
+	return points
    end
 
 levelcolors={white,blue,white, blue, white}
@@ -112,10 +117,11 @@ function render(entity)
 	else
 		step=#entity.sprite
 	end	
-	if (not (entity.angle==nil)) then
-		sprite=entity.sprite[step]
-		spr_r(sprite.index,entity.x,entity.y,entity.angle,sprite.width,sprite.height)
-		if (not entity.landed) entity.angle+=10
+	if (not (entity.points==nil)) then
+		for p in all(entity.points) do
+			pset(p.x,p.y,p.c)
+		end
+
 	else
 		sprite=entity.sprite[step]
 		spr(sprite.index,entity.x,entity.y,sprite.width,sprite.height,entity.mirror,entity.flip)
@@ -128,9 +134,11 @@ function hit()
 	local s,badorder,fixing
 	while (i<=#e.scoops) do
 		fixing=e.scoops[i]
+		rotation=sgn(fixing.dx)*10
 		if (fixing.y+8> e.player[#e.player].y and fixing.y+8< e.player[#e.player].y+6) then
-			if fixing.x> e.player[#e.player].x-3 then
-				if fixing.x< e.player[#e.player].x+3 then
+			if fixing.x> e.player[#e.player].x-4 then
+				if fixing.x< e.player[#e.player].x+4 then
+					-- hit
 					deli(e.scoops,i)
 					fixing.x=e.player[#e.player].x
 					fixing.y=e.player[#e.player].y-6
@@ -141,17 +149,18 @@ function hit()
 					fixing.maxdy=e.player[#e.player].maxdy
 					fixing.acc=e.player[#e.player].acc
 					add(e.player,fixing)
-					sfx(2)
-					if #e.order.scoops >0 and fixing.sprite[1].index == e.order.scoops[1].sprite[1].index then --scoop matches order
+					sfx(2) --plop
+					if #e.order.scoops >0 and fixing.sprite[1].index == e.order.scoops[1].sprite[1].index then 
+						--scoop matches order
 						deli(e.order.scoops,1)
 						if #e.order.scoops==0 and #e.order.toppings== 0 then
-							sfx(1)
+							--completed order
+							sfx(1) --bell
 							newcone=true
 							goodorder=true
 							statistics[level]+=1
-						end
-
-						return	
+							return
+						end	
 					else
 						badorder={}
 						for i=1,#e.player do
@@ -161,17 +170,21 @@ function hit()
 							end
 							fixing.x=fixing.x-rnd(20)+10
 							fixing.dx=rnd{1,-1}
-							fixing.dy=1
+							if i== 1 then
+								fixing.dy=1
+							else
+								fixing.dy=3
+							end	
 							fixing.dt=1
 							fixing.acc=0
 							fixing.flip=true
 							add(badorder,fixing)
 						end
 						badorder[1].angle=10
-
+						badorder[1].rotation=rotation
 						add(e.badorders,badorder)
 						e.order={scoops={},toppings={}}
-						sfx(3)
+						sfx(3)-- whistle
 						return
 					end	
 				end
@@ -179,74 +192,76 @@ function hit()
 		end	
 		i+=1
 	end
-	
-	i=1
-	while (i<=#e.toppings) do
-		fixing=e.toppings[i]
+	if #e.order.scoops ==0 and #e.order.toppings>0 then --time for toppings
+		i=1
+		while (i<=#e.toppings) do
+			fixing=e.toppings[i]
+			if (fixing.y+8> e.player[#e.player].y and fixing.y+8< e.player[#e.player].y+6) then
+				if fixing.x> e.player[#e.player].x-4 then
+					if fixing.x< e.player[#e.player].x+4 then
+						--hit
+						deli(e.toppings,i)
+						fixing.dx=e.player[#e.player].dx
+						fixing.dy=e.player[#e.player].dy 
+						fixing.dt=e.player[#e.player].dt
+						fixing.maxdx=e.player[#e.player].maxdx
+						fixing.maxdy=e.player[#e.player].maxdy
+						fixing.acc=e.player[#e.player].acc
+						fixing.animate=false
+						if (fixing.sprite[1].index==73)then  --cherry
+							fixing.x=e.player[#e.player].x+4
+							fixing.y=e.player[#e.player].y-6
+						else
+							fixing.x=e.player[#e.player].x+4
+							fixing.y=e.player[#e.player].y-3
+						end
+						add(e.player,fixing)
 
-		if (fixing.y+8> e.player[#e.player].y and fixing.y+8< e.player[#e.player].y+6) then
-			
-			if fixing.x> e.player[#e.player].x+4 then
-				if fixing.x< e.player[#e.player].x+12 then
-					
-					deli(e.toppings,i)
-					fixing.dx=e.player[#e.player].dx
-					fixing.dy=e.player[#e.player].dy 
-					fixing.dt=e.player[#e.player].dt
-					fixing.maxdx=e.player[#e.player].maxdx
-					fixing.maxdy=e.player[#e.player].maxdy
-					fixing.acc=e.player[#e.player].acc
-					fixing.animate=false
-					if (fixing.sprite[1].index==73)then  --cherry
-						fixing.x=e.player[#e.player].x+4
-						fixing.y=e.player[#e.player].y-6
-					else
-						fixing.x=e.player[#e.player].x+4
-						fixing.y=e.player[#e.player].y-3
-					end
-					add(e.player,fixing)
-					sfx(2)
-					if #e.order.toppings >0 and fixing.sprite[1].index == e.order.toppings[1].sprite[1].index and #e.order.scoops==0 then --topping matches order
-						deli(e.order.toppings,1)
-						if #e.order.toppings==0 and #e.order.toppings== 0 then
-							sfx(1)
+						if #e.order.toppings >0 and fixing.sprite[1].index == e.order.toppings[1].sprite[1].index and #e.order.scoops==0 then 
+							--topping matches order
+							deli(e.order.toppings,1)
+							sfx(1)-- bell
 							statistics[level]+=1
+							goodorder=true
 							newcone=true
-						end
-
-						return	
-					else
-						badorder={}
-						for i=1,#e.player-1 do
-							fixing={}
-							for key,value in pairs(e.player[i]) do
-								fixing[key]=value
+							return
+						else
+							badorder={}
+							for i=1,#e.player-1 do
+								fixing={}
+								for key,value in pairs(e.player[i]) do
+									fixing[key]=value
+								end
+								fixing.x=fixing.x-rnd(20)+10
+								fixing.dx=rnd{1,-1}
+								if i==1 then
+									fixing.dy=1
+								else
+									fixing.dy=3
+								end
+								fixing.dt=1
+								fixing.acc=0
+								fixing.flip=true
+								add(badorder,fixing)
 							end
-							fixing.x=fixing.x-rnd(20)+10
-							fixing.dx=rnd{1,-1}
-							fixing.dy=1
-							fixing.dt=1
-							fixing.acc=0
-							fixing.flip=true
-							add(badorder,fixing)
+							badorder[1].angle=10
+							add(e.badorders,badorder)
+							e.order={scoops={},toppings={}}
+							sfx(3)-- whistle
+							return
 						end
-						badorder[1].angle=10
-						add(e.badorders,badorder)
-						e.order={scoops={},toppings={}}
-						return
-					end	
+					end
 				end
-			end
-		end	
-		i+=1
-	end
+			end	
+			i+=1
+		end
+	end	
 end
 function move(entities,options)
 	local i=1
 	while (i<=#entities) do
 		local entity=entities[i]
 		if entity.landed then
-			
 		else	
 			if frame%entity.dt == 0 then
 				entity.x+=entity.dx
@@ -266,7 +281,6 @@ function move(entities,options)
 						entity.dx=-entity.dx
 						entity.mirror=not entity.mirror
 					end	
-					
 				elseif (options.mode==remove) then
 					if ( entity.x>options.x[2] and entity.dx>0)or (entity.x<options.x[1] and entity.dx < 0) then
 						deli(entities,i)
@@ -424,14 +438,12 @@ gs.draw={
 		pal(white,white)
 		pal(gray,gray)
 		foreach(e.player,render)
+		for bad in all(e.badorders) do
+			foreach(bad,render)	
+		end
 		foreach(e.scoops,render)
 		foreach(e.toppings,render)
 		foreach(e.clouds,render)
-		for bad in all(e.badorders) do
-			foreach(bad,render)	
-
-		end
-		
 		print("\#6"..timer,115,2,white)
 		if delay >0 then
 			if level < 4 then
@@ -471,13 +483,17 @@ gs.draw={
 			pal(gray,gray)
 			foreach(e.white_cloudcover,render)
 			color(white)
-			msg=""..(statistics[1]+statistics[2]+statistics[3]).." cones"
+			msg=""..(statistics[1]+statistics[2]+statistics[3]).." cone"
+			if (statistics[1]+statistics[2]+statistics[3]!=1) msg..="s"
 			print(msg, 64-(#msg*2),30)
-			msg=""..statistics[1].." doubles"
+			msg=""..statistics[1].." double"
+			if (statistics[1]!=1) msg..="s"
 			print(msg, 64-(#msg*2),38)
-			msg=""..statistics[2].." triples"
+			msg=""..statistics[2].." triple"
+			if (statistics[2]!=1) msg..="s"
 			print(msg, 64-(#msg*2),46)
-			msg=""..statistics[3].." deluxe cones"
+			msg=""..statistics[3].." deluxe cone"
+			if (statistics[3]!=1) msg..="s"
 			print(msg, 64-(#msg*2),54)
 				
 			render(e.bigcone)
@@ -566,7 +582,7 @@ gs.update=
 					{sprite=rnd(s.clouds),x=rnd(32)+32,y=flr(rnd(10))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
 				}
 			}
-			
+			poke(0x3106,64)
 			music(0)
 			
 		end
@@ -587,7 +603,7 @@ gs.update=
 			newcone=false
 			timer=60
 		end	
-		if delay == 0 then
+		if delay == 0  then
 			if level==4 then
 				e=
 				{
@@ -615,6 +631,7 @@ gs.update=
 				timer=3
 				_draw=gs.draw.statistics
 				_update=gs.update.statistics
+				poke(0x3106,128)
 				return
 			end
 			if (btnp(fire1)) then 
@@ -685,7 +702,6 @@ gs.update=
 					t.dx=mid(-t.maxdx,t.dx,t.maxdx)
 					t.dy=mid(-t.maxdy,t.dy,t.maxdy)
 				end	
-				
 				while (#e.clouds<4) do
 					cloud={sprite=rnd(s.clouds),y=flr(rnd(15))-5,mirror=rnd{true,false},dx=rnd({1,2,3,-1,-2,-3}),dy=0,dt=4, maxdx=0, maxdy=0, acc=0}
 					if (cloud.dx<0) then
@@ -698,22 +714,18 @@ gs.update=
 				if (frame%12==0)then
 					cloud=e.clouds[(frame\10)%#e.clouds+1]
 					if rnd()<(#e.order.scoops+1)/(#e.order.scoops+#e.order.toppings+1) then
-						--if #e.order.scoops>0 then
-							scoop={x=min(max(cloud.x+flr(rnd(20))+5,5),110),y=cloud.y+10,mirror=rnd({true,false}),dy=1,dt=1, maxdx=3, maxdy=3, acc=0}
-							scoop.dx= sgn(cloud.dx)
-							scoop.dt=1
-							if (rnd()<.6 or #e.order.scoops==0)  then
-								scoop.sprite=rnd(s.scoops)
-							elseif (#e.order.scoops>0) then
-								scoop.sprite=e.order.scoops[1].sprite
-							end
-
-							if ((cloud.x >50 and cloud.dx> 0) or (cloud.x <64 and cloud.dx<0) ) scoop.dx=-scoop.dx
-
-							add(e.scoops, scoop)
-						--end
+						scoop={x=min(max(cloud.x+flr(rnd(20))+5,5),110),y=cloud.y+10,mirror=rnd({true,false}),dy=1,dt=1, maxdx=3, maxdy=3, acc=0}
+						scoop.dx= sgn(cloud.dx)
+						scoop.dt=1
+						if (rnd()<.6 or #e.order.scoops==0)  then
+							scoop.sprite=rnd(s.scoops)
+						elseif (#e.order.scoops>0) then
+							scoop.sprite=e.order.scoops[1].sprite
+						end
+						if ((cloud.x >50 and cloud.dx> 0) or (cloud.x <64 and cloud.dx<0) ) scoop.dx=-scoop.dx
+						add(e.scoops, scoop)
 					else
-						topping={x=min(max(cloud.x+flr(rnd(20))+5,5),110),y=cloud.y+10,mirror=rnd({true,false}),dy=1,dt=1, maxdx=3, maxdy=3, acc=0}
+						topping={x=min(max(cloud.x+flr(rnd(20))+5,5),110),y=cloud.y+10,mirror=rnd({true,false}),dy=1,dt=1, maxdx=3, maxdy=5, acc=0}
 						topping.dx= sgn(cloud.dx)
 						topping.dt=1
 						if (rnd()<.6)  then
@@ -742,12 +754,18 @@ gs.update=
 		else
 			if (frame%12 ==0) delay-=1
 		end	
-		for badorder in all(e.badorders) do
-			move (badorder,{mode=land})
+		if #e.badorders>0 then
+			move (e.badorders[#e.badorders],{mode=land})
+			cone=e.badorders[#e.badorders][1]
+			if not cone.landed then
+				cone.points=rotate(cone.sprite[1].index,cone.x,cone.y,cone.angle,cone.sprite[1].width,cone.sprite[1].height)
+				cone.angle+=cone.rotation
+			end	
 		end
 		nextframe()
 	end,
 	statistics=function() 
+		
 		if irisin >=0 then 
 			irisin-=1
 		elseif irisout<120 then 
@@ -770,6 +788,7 @@ gs.update=
 				{x=flr(rnd(32))+64, y=flr(rnd(32))+96, c=purple},
 				{x=flr(rnd(32))+96, y=flr(rnd(32))+96, c=purple},
 			}
+			sfx(1)
 			_draw=gs.draw.epilogue
 			_update=gs.update.epilogue
 			return
@@ -778,25 +797,32 @@ gs.update=
 		nextframe()
 	end,
 	epilogue=function() -- epilogue
-		music(-1)
+		
 		if btnp(fire2) then
 			_init()
+			
 		end
 		if irisin >=0 then 
 			irisin-=1
 		elseif irisout<80 then 
 			irisout+=1
 		else	
-			msgx-=1
+			if msgx>-1200 then
+				msgx-=1
+			end
 		end
+
 		for star in all(stars) do
 			if (star.c==dark_purple) star.c=purple
 			if (rnd()>.98) star.c=dark_purple
 		end
-		
+		--if (msgx==-1066) then
+		--	music(2)
+		--end
 		
 	end
 }
+
 __gfx__
 73337333333433330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000333113330000000000000000
 33733333333c43330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000311111130000000000000000
@@ -1077,7 +1103,8 @@ __sfx__
 6d0220003c5703c5703c5703c5603c5603c5603c5503c5503c5403c5403c5403c5303c5303c5703c5703c5703c5603c5603c5603c5503c5503c5403c5403c5403c5303c5303c5303c5203c5203c5203c5103c515
 930108003c6313c6313c6313c6213c6213c6213c6113c6113c6003c6003c6003c6000c600266002560022600206001d6001a6001a6001a6001c6001d6001e6001f600226002a6001d6001c6001a6001960018600
 010800003275432750007000070032754327503275032750007000070000700007000070000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-450f06001407014072140721407214032140150000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+410f000000000000001f5721f5751f5721f5751f5721f5751f5721f5721f5721f5752257222572225722257500000000001a5721a5751a5721a5751a5721a5751a5721a57518572185751b5721b5721b5721b535
+410f000000000000001f5721f5751f5721f5751f5721f5751f5721f5721f5721f5752257222572225722257500000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1104,11 +1131,24 @@ __sfx__
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+d10f000000000000001f5321f5351f5321f5351f5321f5351f5321f5321f5321f5351c5321c5321c5321c5351f5001f5001f5321f5351e5321e5351c5321c5351a5321a5351f5321f5351a5321a5321a5321a535
+d10f000000000000001a5321a5351a5321a5351a5321a5351a5321a5351e5321e5351553215532155321553500000000001a5321a5351a5321a5351a5321a5351a5321a5351f5321f53517532175321753217535
+d10f000000000000001f5321f5351a5321a5351a5321a5351a5321a5351a5321a5352153221532215322153500000000001e5321e5351a5321a5351a5321a5351a5321a5351a5321a5351f5321f5321a5321a535
+d10f000000000000001f5321f5351f5321f5351f5321f5351a5321a5351e5321e535155321553215532155351f5001f5001f5321f5351e5321e5351c5321c5351a5321a5351f5321f5351a5321a5321a5321a535
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-d11e001f005021f5351f5351f5351f5321f5351c5321c535185021f5351e5351c5351a5351f5351a5321a535005021a5351a5351a5351a5351e53515532155351a5021a5351a5351a5351f53517532175351a535
+001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+410f000000000000001f5321f5351f5321f5351f5321f5351f5321f5321f5321f535225322253222532225351f5001f5001953219535195321953521532215351e5321e535215322153521532215322153221535
+410e000000000000001a5321a5351a5321a5351a5321a5351a5321a53518532185351b5321b5321b5321b53500000000001c5321c5351c5321c5351c5321c5351c5321c53521532215351b5321b5321b5321b535
+d110000000000000001b5321b53518532185351a5321a5351d5321d5351d5321d5351d5321d5351d5321d5351d5321d5321d5321d5321d5321d5321d5321d5350000000000000000000000000000000000000000
+410f000000000000001f5321f5351f5321f5351f5321f5351f5321f5321f5321f5352253222532225322253500000000001a5321a5351a5321a5351a5321a5351a5321a53518532185351b5321b5321b5321b535
+410f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __music__
-02 20614040
-04 42404040
-
-
-
+01 20434040
+02 21414040
+03 04424344
+04 45424344
+02 6c424344

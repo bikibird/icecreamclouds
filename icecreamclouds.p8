@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 32
 __lua__
 -- for the bullfrog's birthday
--- by jenny Schmidt (@bikibird) except as noted below
+-- by jenny schmidt (@bikibird)
 -- some tree sprites adapted from nerdyteachers.com
 -- sprite rotation adapted from code by @freds72
 -- big blue marble from nasa and adapted with https://bikibird.itch.io/depict
@@ -245,6 +245,7 @@ function hit()
 								add(badorder,fixing)
 							end
 							badorder[1].angle=10
+							badorder[1].rotation=rotation
 							add(e.badorders,badorder)
 							e.order={scoops={},toppings={}}
 							sfx(3)-- whistle

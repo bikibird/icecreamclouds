@@ -3,7 +3,7 @@ PICO 8 source code repository
 
 Play the game at https://bikibird.itch.io/ice-cream-clouds or  https://www.lexaloffle.com/bbs/?tid=42565
 
-Straight from the laboratory of Professor Von Stroopwafel is a modest proposal to solve global climate change. Enjoy a lighthearted romp through a speculative future. It even has bells and whistles. Happy Earth Day, everyone. Play at https://bikibird.itch.io/ice-cream-clouds or 
+Straight from the laboratory of Professor Von Stroopwafel is a modest proposal to solve global climate change. Enjoy a lighthearted romp through a speculative future. It even has bells and whistles. Happy Earth Day, everyone.
 
 Game Play
 Catch falling scoops of ice cream and toppings to fulfill as many orders as possible before the timer runs out.

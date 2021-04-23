@@ -1,14 +1,16 @@
 # Ice Cream Clouds
-## In celebration of Earth Day, a modest proposal for solving global climate change
-Dateline: The Future...
+PICO 8 source code repository
 
-We only had one planet and things were getting worse.  It was time for drastic action. The scientists and engineers brainstormed. The first idea was to harness volcanoes to pump sulfur dioxide into the upper atmosphere, but no one wanted acid rain-- too sour.
+Play the game at https://bikibird.itch.io/ice-cream-clouds or  https://www.lexaloffle.com/bbs/?tid=42565
 
-The next idea was ultra reflective clouds spun from sugar and soy.  It could certainly work if the math was right. The only drawback was baseball sized hail that would bonk people hard. What a headache! Everyone was downhearted, but then Professor von Stroopwafel thought of a way to make the hail softer, sweeter, and overall ice creamier.
+Straight from the laboratory of Professor Von Stroopwafel is a modest proposal to solve global climate change. Enjoy a lighthearted romp through a speculative future. It even has bells and whistles. Happy Earth Day, everyone. Play at https://bikibird.itch.io/ice-cream-clouds or 
 
-It worked! In year three, they even figured out how to add toppings.  Now, every summer the people of Earth gather in parks and on lawns to catch ice cream from the sky.  
+Game Play
+Catch falling scoops of ice cream and toppings to fulfill as many orders as possible before the timer runs out.
 
-*****
-Catch ice cream and toppings to complete each order.
-*****
-Global climate change and rainbow sprinkles are real.  Sadly, ice cream clouds are not.  If you love this planet and the people on it, do what you can to save the Earth: drive less, eat less meat, switch to renewable energy sources, live in cities, and most importantly vote for leaders who take this issue seriously before it's game over.
+Controls
+Press the X key to advance to the next screen.
+
+Left and right keys move the cone.
+
+Use the Z key at any time to see the ice cream order. Press Z again to dismiss it. The timer is always running so try not to look at the order too long or too often.
